@@ -7,9 +7,9 @@ const node = (tag, text, className) => {
   return element;
 };
 
-async function api(path, { method = 'GET', data, authorization } = {}) {
+async function api(path, { method = 'GET', data, authorization, files = [] } = {}) {
   const headers = { Accept: 'application/json' };
-  if (data !== undefined) headers['Content-Type'] = 'application/json';
+  if (data !== undefined && !files.length) headers['Content-Type'] = 'application/json';
   if (authorization?.startsWith('Bearer ')) headers['X-Moderator-Key'] = authorization.slice(7);
   else if (authorization) headers['X-Review-Authorization'] = authorization;
   const requested = new URL(path, location.origin);
@@ -17,12 +17,20 @@ async function api(path, { method = 'GET', data, authorization } = {}) {
   endpoint.search = requested.search;
   endpoint.searchParams.set('action', requested.pathname.split('/').pop());
   if (method === 'DELETE') { method = 'POST'; data = { ...data, operation: 'delete' }; }
+  let body = data === undefined ? undefined : JSON.stringify(data);
+  if (files.length) {
+    body = new FormData(); body.append('payload', JSON.stringify({ ...data, newImageCount: files.length }));
+    for (const file of files) body.append('images[]', file, 'review-image');
+  }
   const response = await fetch(endpoint, {
-    method, headers, body: data === undefined ? undefined : JSON.stringify(data),
+    method, headers, body,
     credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
   });
   let result;
-  try { result = await response.json(); } catch { throw new Error('The service did not respond. Please try again.'); }
+  try { result = await response.json(); } catch {
+    const error = new Error(response.status === 413 ? 'This submission exceeds the server upload limit. Try smaller images or use the contact links.' : 'The service did not respond. Please try again.');
+    error.status = response.status; throw error;
+  }
   if (!response.ok) {
     const error = new Error(result.error || 'The request could not be completed.');
     error.status = response.status;
@@ -31,7 +39,7 @@ async function api(path, { method = 'GET', data, authorization } = {}) {
   return result;
 }
 
-function reviewCard(review) {
+function reviewCard(review, authorization) {
   const article = node('article', undefined, 'review');
   const stars = node('div', '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating), 'review-stars');
   stars.setAttribute('aria-label', `${review.rating} out of 5 stars`);
@@ -42,6 +50,7 @@ function reviewCard(review) {
   meta.append(node('span', date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })));
   article.append(meta);
   if (review.appVersion) article.append(node('p', `App version: ${review.appVersion}`, 'quiet'));
+  if (review.images?.length) article.append(ReviewImageUI.gallery(review.images, authorization));
   if (review.developerReply) {
     const reply = node('section', undefined, 'developer-reply');
     reply.append(node('p', 'Official WizeStream developer response', 'developer-reply-heading'));
@@ -75,7 +84,8 @@ async function loadReviews(page = currentPage) {
   try {
     const result = await api(`/api/reviews?page=${page}`);
     currentPage = page; showSummary(result);
-    $('reviews').replaceChildren(...result.reviews.map(reviewCard));
+    ReviewImageUI.close(); ReviewImageUI.release($('reviews'));
+    $('reviews').replaceChildren(...result.reviews.map(review => reviewCard(review)));
     if (!result.reviews.length) $('reviews').append(node('p', result.count ? 'No reviews on this page.' : 'A fresh start. Your review can help the next person discover WizeStream.', 'empty'));
     $('list-status').textContent = '';
     $('page-label').textContent = result.count ? `Page ${page} of ${Math.ceil(result.count / result.pageSize)}` : '';
@@ -177,9 +187,15 @@ function showReceipt(uncertain = false) {
 }
 function setupPublic() {
   loadReviews();
+  const images = ReviewImageUI.picker($('review-image-picker'));
+  let imagesConfigured = false;
+  const configureImages = data => {
+    if (!imagesConfigured) { images.configure(data.imageLimits); imagesConfigured = true; }
+  };
+  getChallenge().then(configureImages).catch(error => { $('submit-status').textContent = error.message; });
   $('previous').onclick = () => loadReviews(currentPage - 1);
   $('next').onclick = () => loadReviews(currentPage + 1);
-  $('review-form').addEventListener('focusin', () => { getChallenge().catch(error => { $('submit-status').textContent = error.message; }); }, { once: true });
+  $('review-form').addEventListener('focusin', () => { getChallenge().then(configureImages).catch(error => { $('submit-status').textContent = error.message; }); }, { once: true });
   $('review-form').addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!$('review-form').reportValidity()) return;
@@ -187,17 +203,20 @@ function setupPublic() {
     $('submit-status').textContent = 'Preparing your submission…';
     let attempted = false;
     try {
+      const selected = images.payload(); images.lock(true);
       const challenge = await getChallenge();
+      configureImages(challenge);
       const remaining = challenge.minimumWaitMs - (Date.now() - challenge.receivedAt);
       if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining + 50));
       receipt ||= createReceipt();
       const fields = new FormData($('review-form'));
       attempted = true;
-      const result = await api('/api/reviews', { method: 'POST', data: {
+      const result = await api('/api/reviews', { method: 'POST', files: selected.files, data: {
         id: receipt.id, deletionToken: receipt.token, challenge: challenge.challenge,
         rating: Number(fields.get('rating')), content: fields.get('content'),
         nickname: fields.get('nickname'), appVersion: fields.get('appVersion'),
         website: fields.get('website'), consent: fields.get('consent') === 'on',
+        imageConsent: fields.get('consent') === 'on', newImageCount: selected.files.length,
       } });
       showReceipt();
       $('submit-status').textContent = result.alreadyReceived ? 'This review was already received. Use your private link to manage it.' : 'Received. Your rating and review will appear after moderation.';
@@ -216,6 +235,7 @@ function setupPublic() {
       if (attempted && (!error.status || error.status >= 500)) showReceipt(true);
       challengePromise = null;
       button.disabled = false;
+      images.lock(false);
     }
   });
   $('remember-receipt').onclick = () => {
@@ -235,13 +255,15 @@ function setupPublic() {
   };
 }
 
+let editImages;
 async function setupManage() {
   const match = /^#([0-9a-f-]{36}):([A-Za-z0-9_-]{43})$/.exec(location.hash);
   if (!match) { $('manage-status').textContent = 'Open the complete private management link saved when you submitted your review.'; return; }
   const authorization = `Review ${match[1]}:${match[2]}`;
   try {
     const review = await api('/api/manage', { method: 'POST', data: {}, authorization });
-    $('managed-review').replaceChildren(reviewCard(review));
+    ReviewImageUI.close(); ReviewImageUI.release($('managed-review'));
+    $('managed-review').replaceChildren(reviewCard(review, authorization));
     const remembered = savedReviewAccess().some(entry => entry.id === match[1] && entry.token === match[2]);
     $('remember-managed-review').hidden = false;
     $('forget-managed-review').hidden = !remembered;
@@ -263,6 +285,9 @@ async function setupManage() {
     $('manage-status').textContent = review.state === 'published' ? 'Your review is published.' : 'Your review is awaiting moderation. Pending reviews expire after 30 days.';
     const editForm = $('edit-review-form');
     const fields = review.pendingEdit || review;
+    editImages?.dispose(); editImages = ReviewImageUI.picker($('edit-image-picker'), authorization);
+    editImages.configure(review.imageLimits, fields.images);
+    $('edit-image-consent').checked = false;
     $('edit-rating').value = String(fields.rating);
     $('edit-content').value = fields.content;
     $('edit-nickname').value = fields.nickname || '';
@@ -277,15 +302,18 @@ async function setupManage() {
       const submit = $('save-review-edit');
       submit.disabled = true;
       try {
+        const selected = editImages.payload(); editImages.lock(true);
+        if (selected.files.length && !$('edit-image-consent').checked) throw new Error('Agree to publication of the new images before submitting.');
         const data = { operation: 'edit', rating: Number($('edit-rating').value),
           content: $('edit-content').value, nickname: $('edit-nickname').value,
-          appVersion: $('edit-app-version').value };
-        await api('/api/manage', { method: 'POST', data, authorization });
+          appVersion: $('edit-app-version').value, keepImageIds: selected.keepImageIds,
+          newImageCount: selected.files.length, imageConsent: $('edit-image-consent').checked };
+        await api('/api/manage', { method: 'POST', data, authorization, files: selected.files });
         await setupManage();
         $('edit-review-status').textContent = review.state === 'published'
           ? 'Update submitted for moderation.' : 'Pending review updated.';
       } catch (error) { $('edit-review-status').textContent = error.message; }
-      finally { submit.disabled = false; }
+      finally { submit.disabled = false; editImages.lock(false); }
     };
     $('cancel-review-edit').hidden = !review.pendingEdit;
     $('cancel-review-edit').onclick = async () => {
@@ -301,11 +329,12 @@ async function setupManage() {
       $('delete-review').disabled = true;
       try {
         await api('/api/manage', { method: 'DELETE', data: {}, authorization });
+        ReviewImageUI.close(); ReviewImageUI.release($('managed-review')); editImages.dispose();
         $('managed-review').replaceChildren(); $('delete-review').hidden = true;
         $('edit-review-form').hidden = true; $('cancel-review-edit').hidden = true;
         try { forgetReviewAccess(match[1]); } catch { /* The public deletion has succeeded. */ }
         $('remember-managed-review').hidden = true; $('forget-managed-review').hidden = true;
-        $('manage-status').textContent = 'Your review and rating have been deleted.';
+        $('manage-status').textContent = 'Your review, rating and images have been deleted.';
         history.replaceState(null, '', new URL('?view=manage', location.href));
       } catch (error) { $('manage-status').textContent = error.message; $('delete-review').disabled = false; }
     };
@@ -322,9 +351,12 @@ async function loadQueue(page = moderationPage) {
     moderationPage = page;
     $('moderator-status').textContent = `${result.count} ${moderationState} ${result.count === 1 ? 'review' : 'reviews'}.`;
     const cards = result.reviews.map(review => {
-      const card = reviewCard(review); const actions = node('div', undefined, 'actions');
+      const card = reviewCard(review, `Bearer ${moderatorKey}`); const actions = node('div', undefined, 'actions');
       if (review.state === 'edit') {
         card.append(node('p', `Currently published: ${review.originalRating}/5 — ${review.originalContent}`, 'quiet'));
+        if (review.originalImages?.length) {
+          card.append(node('p', 'Currently published images', 'quiet'), ReviewImageUI.gallery(review.originalImages, `Bearer ${moderatorKey}`));
+        }
       }
       const availableActions = review.state === 'pending' ? ['publish', 'remove']
         : review.state === 'edit' ? ['approve-edit', 'reject-edit'] : ['remove'];
@@ -377,6 +409,7 @@ async function loadQueue(page = moderationPage) {
       }
       card.append(actions); return card;
     });
+    ReviewImageUI.close(); ReviewImageUI.release($('moderator-reviews'));
     $('moderator-reviews').replaceChildren(...cards);
     $('moderator-pagination').hidden = false;
     $('mod-page').textContent = `Page ${page} of ${Math.max(1, Math.ceil(result.count / result.pageSize))}`;
@@ -386,6 +419,7 @@ async function loadQueue(page = moderationPage) {
 }
 function lockModeration() {
   moderationEpoch++; queueRequest++; moderatorKey = '';
+  ReviewImageUI.close(); ReviewImageUI.release($('moderator-reviews'));
   $('moderator-key').value = ''; $('moderator-reviews').replaceChildren();
   $('moderator-controls').hidden = true; $('moderator-pagination').hidden = true;
   $('moderator-login').hidden = false; $('moderator-status').textContent = 'Locked.';

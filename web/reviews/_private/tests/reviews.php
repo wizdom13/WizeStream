@@ -56,7 +56,7 @@ function manage(ReviewService $service, array $review, string $operation = 'read
 function fixture(array $options = []): array
 {
     $db = testDatabase();
-    foreach (['wize_review_edits', 'wize_review_replies', 'wize_reviews', 'wize_review_challenges', 'wize_review_limits'] as $table) { $db->exec('DELETE FROM ' . $table); }
+    foreach (['wize_review_edits', 'wize_review_replies', 'wize_reviews', 'wize_review_image_gc', 'wize_review_challenges', 'wize_review_limits'] as $table) { $db->exec('DELETE FROM ' . $table); }
     $clock = new stdClass(); $clock->now = 1794571200000;
     $config = array_replace(testConfig(), $options);
     $service = new ReviewService($db, $config, static fn(): int => $clock->now);
@@ -262,6 +262,7 @@ $tests['optional local review access requires an explicit UI choice'] = function
     equal(str_contains($fragment, 'id="remember-review-on-device" type="checkbox"'), true);
     equal(str_contains($fragment, 'id="mine-page"'), true);
 };
+require __DIR__ . '/images.php';
 $failed = 0;
 foreach ($tests as $name => $test) {
     try { $test(); echo "PASS: $name\n"; }

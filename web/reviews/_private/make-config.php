@@ -10,6 +10,7 @@ if (!$parent || str_starts_with($parent . '/', $web . '/')) { fwrite(STDERR, "Ch
 $random = static fn(): string => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
 define('WIZE_REVIEWS_ENTRY', true);
 $config = require __DIR__ . '/config.example.php';
+$config['images_dir'] = $parent . '/review-images';
 foreach (['moderator_key', 'challenge_key', 'rate_key'] as $name) { $config[$name] = $random(); }
 umask(0077);
 $file = fopen($destination, 'x');

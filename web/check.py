@@ -113,6 +113,10 @@ def check():
                 errors.append(f'{name}: Empty/placeholder link')
                 continue
             if parsed.scheme or parsed.netloc:
+                if (tag == 'a' and attribute == 'href' and parsed.scheme == 'mailto'
+                        and not parsed.netloc and not parsed.query and not parsed.fragment
+                        and re.fullmatch(r'[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', parsed.path)):
+                    continue
                 if parsed.scheme != 'https' or not parsed.hostname:
                     errors.append(f'{name}: Unexpected link scheme: {value}')
                 if attribute == 'src' or tag == 'link' and attribute == 'href':

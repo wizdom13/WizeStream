@@ -7,6 +7,7 @@ final class ReviewHttpError extends RuntimeException
 {
     public function __construct(public int $status, string $message) { parent::__construct($message); }
 }
+require_once __DIR__ . '/images.php';
 
 /** No framework, sessions, cookies, mailer, analytics or external requests. */
 final class ReviewService
@@ -15,6 +16,8 @@ final class ReviewService
     private const PAGE_SIZE = 12;
     private Closure $clock;
     private string $origin;
+    private ReviewImages $images;
+    private array $preparedImages = [];
 
     public function __construct(private PDO $db, private array $config, ?callable $clock = null)
     {
@@ -25,9 +28,10 @@ final class ReviewService
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
         $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        if ((int) $db->query('SELECT schema_version FROM wize_review_guard WHERE id = 1')->fetchColumn() !== 3) {
+        if ((int) $db->query('SELECT schema_version FROM wize_review_guard WHERE id = 1')->fetchColumn() !== 4) {
             throw new RuntimeException('Import the supported schema before enabling the service.');
         }
+        $this->images = new ReviewImages($db, $config);
     }
 
     public static function validateConfig(array $config): void
@@ -78,12 +82,24 @@ final class ReviewService
         }
     }
 
-    public function maintenance(): void
+    public function maintenance(bool $orphans = false): void
     {
         $now = $this->now();
         $this->query('DELETE FROM wize_review_challenges WHERE expires_at <= ?', [$now]);
         $this->query('DELETE FROM wize_review_limits WHERE expires_at <= ?', [$now]);
-        $this->query("DELETE FROM wize_reviews WHERE state = 'pending' AND submitted_at <= ?", [$now - 30 * 24 * self::HOUR]);
+        $this->transaction(function () use ($now): void {
+            $expired = $this->query("SELECT id FROM wize_reviews WHERE state = 'pending' AND submitted_at <= ?", [$now - 30 * 24 * self::HOUR])->fetchAll();
+            foreach ($expired as $row) { $this->images->queueReviewDeletion($row['id']); }
+            $this->query("DELETE FROM wize_reviews WHERE state = 'pending' AND submitted_at <= ?", [$now - 30 * 24 * self::HOUR]);
+            $edits = $this->query('SELECT review_id FROM wize_review_edits WHERE submitted_at <= ?', [$now - 30 * 24 * self::HOUR])->fetchAll();
+            foreach ($edits as $edit) {
+                $this->query('DELETE FROM wize_review_edits WHERE review_id = ?', [$edit['review_id']]);
+                $this->images->replaceLinks($edit['review_id'], 'edit', []);
+                $this->images->pruneUnused($edit['review_id']);
+            }
+        });
+        $this->images->collectGarbage();
+        if ($orphans) { $this->images->collectOrphans($now); }
     }
 
     private function limit(string $ip, string $kind, int $maximum): void
@@ -108,7 +124,7 @@ final class ReviewService
     {
         return [
             'Content-Type' => $type, 'Cache-Control' => 'no-store',
-            'Content-Security-Policy' => "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+            'Content-Security-Policy' => "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
             'Referrer-Policy' => 'no-referrer', 'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'DENY', 'Permissions-Policy' => 'camera=(), microphone=(), geolocation=()',
         ];
@@ -182,12 +198,56 @@ final class ReviewService
         if (!is_string($value) || !preg_match('/^[1-9][0-9]{0,4}$/D', $value) || (int) $value > 10000) { throw new ReviewHttpError(400, 'Invalid page.'); }
         return (int) $value;
     }
-    private function records(array $rows): array
+    private function records(array $rows, string $set = 'current'): array
     {
-        return array_map(static function (array $row): array {
+        return array_map(function (array $row) use ($set): array {
             $row['rating'] = (int) $row['rating'];
+            $row['images'] = $this->images->list($row['id'], $set);
+            if ($set === 'edit') { $row['originalImages'] = $this->images->list($row['id']); }
             return $row;
         }, $rows);
+    }
+
+    private function imageSelection(array $input, array $files, array $defaults, array $allowed, string $ip): array
+    {
+        if (array_key_exists('newImageCount', $input) && (!is_int($input['newImageCount']) || $input['newImageCount'] !== count($files))) {
+            throw new ReviewHttpError(400, 'Some images did not arrive. Try fewer or smaller images, or send them by email.');
+        }
+        if ($files !== [] && ($input['imageConsent'] ?? false) !== true) {
+            throw new ReviewHttpError(400, 'Agree to publication of the attached images.');
+        }
+        $ids = array_key_exists('keepImageIds', $input) ? $input['keepImageIds'] : array_column($defaults, 'id');
+        if (!is_array($ids) || !array_is_list($ids) || count($ids) + count($files) > ReviewImages::MAX_COUNT ||
+            count(array_unique($ids, SORT_REGULAR)) !== count($ids)) { throw new ReviewHttpError(400, 'Attach at most three images.'); }
+        $allowedIds = array_column($allowed, 'id');
+        foreach ($ids as $id) {
+            if (!$this->validId($id) || !in_array($id, $allowedIds, true)) { throw new ReviewHttpError(400, 'Image unavailable. Reload your review before editing.'); }
+        }
+        if ($files !== []) { $this->limit($ip, 'image-upload', 12); }
+        $this->preparedImages = $this->images->prepare($files);
+        return array_merge($ids, array_column($this->preparedImages, 'id'));
+    }
+
+    private function removeReview(string $id): void
+    {
+        $this->images->queueReviewDeletion($id);
+        $this->query('DELETE FROM wize_reviews WHERE id = ?', [$id]);
+    }
+
+    private function image(array $query, array $headers, string $ip): array
+    {
+        $id = $query['id'] ?? null;
+        $variant = $query['variant'] ?? 'thumb';
+        if (!$this->validId($id) || !in_array($variant, ['thumb', 'full'], true)) { throw new ReviewHttpError(404, 'Image unavailable.'); }
+        $image = $this->query("SELECT i.review_id, r.state, EXISTS(SELECT 1 FROM wize_review_image_links l WHERE l.image_id = i.id AND l.image_set = 'current') AS is_current FROM wize_review_images i JOIN wize_reviews r ON r.id = i.review_id WHERE i.id = ?", [$id])->fetch();
+        if (!$image) { throw new ReviewHttpError(404, 'Image unavailable.'); }
+        if ($image['state'] !== 'published' || !(int) $image['is_current']) {
+            if (isset($headers['x-moderator-key'])) { $this->moderator($headers, $ip); }
+            elseif ($this->owned($headers)['id'] !== $image['review_id']) { throw new ReviewHttpError(404, 'Image unavailable.'); }
+        }
+        return ['status' => 200, 'headers' => $this->headers('image/webp') + [
+            'Content-Disposition' => 'inline; filename="review-image.webp"', 'Cross-Origin-Resource-Policy' => 'same-origin',
+        ], 'body' => $this->images->read($id, $variant === 'thumb')];
     }
     public function summary(): array
     {
@@ -200,11 +260,15 @@ final class ReviewService
     }
 
     /** Used by both HTTP entry points and integration tests; secrets never enter a URL. */
-    public function handle(string $method, string $action, array $query = [], array $headers = [], string $raw = '', string $ip = 'unknown'): array
+    public function handle(string $method, string $action, array $query = [], array $headers = [], string $raw = '', string $ip = 'unknown', array $files = []): array
     {
         $headers = array_change_key_case($headers, CASE_LOWER);
         try {
             $this->maintenance();
+            if ($files !== [] && ($method !== 'POST' || !in_array($action, ['reviews', 'manage'], true))) {
+                throw new ReviewHttpError(400, 'Images can only accompany a review or review edit.');
+            }
+            if ($method === 'GET' && $action === 'image') { return $this->image($query, $headers, $ip); }
             if ($method === 'GET' && $action === 'summary') { return $this->json($this->summary()); }
             if ($method === 'GET' && in_array($action, ['badge-svg', 'badge-json'], true)) {
                 $data = $this->summary();
@@ -217,14 +281,17 @@ final class ReviewService
             }
             if ($method === 'GET' && $action === 'reviews') {
                 $page = $this->page($query);
-                $reviews = $this->records($this->query("SELECT r.id, r.rating, r.nickname, r.content, r.app_version AS appVersion, r.created_day AS date, rep.content AS developerReply, rep.updated_day AS replyDate FROM wize_reviews AS r LEFT JOIN wize_review_replies AS rep ON rep.review_id = r.id WHERE r.state = 'published' ORDER BY r.submitted_at DESC, r.id DESC LIMIT ? OFFSET ?", [self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE])->fetchAll());
-                return $this->json(['reviews' => $reviews, 'page' => $page, 'pageSize' => self::PAGE_SIZE] + $this->summary());
+                return $this->transaction(function () use ($page): array {
+                    $reviews = $this->records($this->query("SELECT r.id, r.rating, r.nickname, r.content, r.app_version AS appVersion, r.created_day AS date, rep.content AS developerReply, rep.updated_day AS replyDate FROM wize_reviews AS r LEFT JOIN wize_review_replies AS rep ON rep.review_id = r.id WHERE r.state = 'published' ORDER BY r.submitted_at DESC, r.id DESC LIMIT ? OFFSET ?", [self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE])->fetchAll());
+                    return $this->json(['reviews' => $reviews, 'page' => $page, 'pageSize' => self::PAGE_SIZE] + $this->summary());
+                });
             }
             if ($method === 'GET' && $action === 'challenge') {
                 if (($headers['sec-fetch-site'] ?? '') === 'cross-site') { throw new ReviewHttpError(403, 'Open the form on the review website.'); }
                 $this->limit($ip, 'challenge', 40);
                 $payload = $this->now() . '.' . bin2hex(random_bytes(16));
-                return $this->json(['challenge' => $payload . '.' . hash_hmac('sha256', $payload, $this->config['challenge_key']), 'minimumWaitMs' => 2000]);
+                return $this->json(['challenge' => $payload . '.' . hash_hmac('sha256', $payload, $this->config['challenge_key']),
+                    'minimumWaitMs' => 2000, 'imageLimits' => $this->images->limits()]);
             }
             if ($method === 'POST' && $action === 'reviews') {
                 $input = $this->body($headers, $raw);
@@ -246,7 +313,8 @@ final class ReviewService
                 if (!is_int($input['rating'] ?? null) || $input['rating'] < 1 || $input['rating'] > 5 || preg_match_all('/./us', $content) < 10 || ($input['consent'] ?? false) !== true) {
                     throw new ReviewHttpError(400, 'Choose 1–5 stars, write at least 10 characters, and agree to publication.');
                 }
-                return $this->transaction(function () use ($input, $digest, $expiry, $content, $nickname, $version): array {
+                $imageIds = $this->imageSelection($input, $files, [], [], $ip);
+                return $this->transaction(function () use ($input, $digest, $expiry, $content, $nickname, $version, $imageIds): array {
                     // Recheck after acquiring the shared lock: concurrent retries create one row.
                     $existing = $this->query('SELECT delete_hash, state FROM wize_reviews WHERE id = ?', [$input['id']])->fetch();
                     if ($existing) {
@@ -259,6 +327,8 @@ final class ReviewService
                     if ($this->query('SELECT digest FROM wize_review_challenges WHERE digest = ?', [$digest])->fetch()) { throw new ReviewHttpError(409, 'This form was already submitted. Reload before writing another review.'); }
                     $this->query('INSERT INTO wize_review_challenges (digest, expires_at) VALUES (?, ?)', [$digest, $expiry]);
                     $this->query("INSERT INTO wize_reviews (id, rating, nickname, content, app_version, delete_hash, state, created_day, submitted_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)", [$input['id'], $input['rating'], $nickname, $content, $version, hash('sha256', $input['deletionToken']), gmdate('Y-m-d', intdiv($this->now(), 1000)), $this->now()]);
+                    $this->images->insert($input['id'], $this->preparedImages, $this->now());
+                    $this->images->replaceLinks($input['id'], 'current', $imageIds);
                     return $this->json(['id' => $input['id'], 'state' => 'pending'], 201);
                 });
             }
@@ -266,6 +336,7 @@ final class ReviewService
                 $input = $this->body($headers, $raw);
                 $this->limit($ip, 'manage', 120);
                 $record = $this->owned($headers);
+                if ($files !== [] && ($input['operation'] ?? 'read') !== 'edit') { throw new ReviewHttpError(400, 'Images can only accompany a review edit.'); }
                 if (($input['operation'] ?? 'read') === 'edit') {
                     $content = $this->text($input['content'] ?? null, 3000);
                     $nickname = $this->text($input['nickname'] ?? null, 40, true);
@@ -274,48 +345,69 @@ final class ReviewService
                     if (!is_int($rating) || $rating < 1 || $rating > 5 || preg_match_all('/./us', $content) < 10) {
                         throw new ReviewHttpError(400, 'Choose 1–5 stars and write at least 10 characters.');
                     }
-                    if ($record['state'] === 'pending') {
-                        $this->query("UPDATE wize_reviews SET rating = ?, nickname = ?, content = ?, app_version = ? WHERE id = ? AND state = 'pending'", [$rating, $nickname, $content, $version, $record['id']]);
-                        return $this->json(['state' => 'pending', 'editState' => null]);
-                    }
-                    return $this->transaction(function () use ($record, $rating, $nickname, $content, $version): array {
-                        if (!$this->query("SELECT id FROM wize_reviews WHERE id = ? AND state = 'published'", [$record['id']])->fetch()) {
-                            throw new ReviewHttpError(404, 'Review unavailable.');
+                    $currentImages = $this->images->list($record['id']);
+                    $editImages = $this->images->list($record['id'], 'edit');
+                    $hasEdit = (bool) $this->query('SELECT review_id FROM wize_review_edits WHERE review_id = ?', [$record['id']])->fetch();
+                    $imageIds = $this->imageSelection($input, $files, $hasEdit ? $editImages : $currentImages,
+                        array_merge($currentImages, $editImages), $ip);
+                    return $this->transaction(function () use ($headers, $rating, $nickname, $content, $version, $imageIds): array {
+                        // Image decoding can take time: bind this write to the current receipt owner.
+                        $record = $this->owned($headers);
+                        $this->images->insert($record['id'], $this->preparedImages, $this->now());
+                        if ($record['state'] === 'pending') {
+                            $this->query("UPDATE wize_reviews SET rating = ?, nickname = ?, content = ?, app_version = ? WHERE id = ? AND state = 'pending'", [$rating, $nickname, $content, $version, $record['id']]);
+                            $this->images->replaceLinks($record['id'], 'current', $imageIds);
+                            $this->images->pruneUnused($record['id']);
+                            return $this->json(['state' => 'pending', 'editState' => null]);
                         }
                         $existing = $this->query('SELECT review_id FROM wize_review_edits WHERE review_id = ?', [$record['id']])->fetch();
                         if (!$existing && (int) $this->query('SELECT COUNT(*) FROM wize_review_edits')->fetchColumn() >= (int) ($this->config['max_pending'] ?? 500)) {
                             throw new ReviewHttpError(503, 'The review edit queue is full. Please try again later.');
                         }
                         $this->query('INSERT INTO wize_review_edits (review_id, rating, nickname, content, app_version, submitted_at) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE rating = VALUES(rating), nickname = VALUES(nickname), content = VALUES(content), app_version = VALUES(app_version), submitted_at = VALUES(submitted_at)', [$record['id'], $rating, $nickname, $content, $version, $this->now()]);
+                        $this->images->replaceLinks($record['id'], 'edit', $imageIds);
+                        $this->images->pruneUnused($record['id']);
                         return $this->json(['state' => 'published', 'editState' => 'pending'], 202);
                     });
                 }
                 if (($input['operation'] ?? 'read') === 'cancel-edit') {
-                    $this->query('DELETE FROM wize_review_edits WHERE review_id = ?', [$record['id']]);
+                    $this->transaction(function () use ($headers): void {
+                        $record = $this->owned($headers);
+                        $this->query('DELETE FROM wize_review_edits WHERE review_id = ?', [$record['id']]);
+                        $this->images->replaceLinks($record['id'], 'edit', []);
+                        $this->images->pruneUnused($record['id']);
+                    });
                     return $this->json(['cancelled' => true]);
                 }
                 if (($input['operation'] ?? 'read') === 'delete') {
-                    $this->query('DELETE FROM wize_reviews WHERE id = ?', [$record['id']]);
+                    $this->transaction(function () use ($headers): void { $this->removeReview($this->owned($headers)['id']); });
                     return $this->json(['deleted' => true]);
                 }
                 if (($input['operation'] ?? 'read') !== 'read') { throw new ReviewHttpError(400, 'Invalid management action.'); }
-                $pendingEdit = $this->query('SELECT rating, nickname, content, app_version AS appVersion FROM wize_review_edits WHERE review_id = ?', [$record['id']])->fetch();
-                if ($pendingEdit) { $pendingEdit['rating'] = (int) $pendingEdit['rating']; }
-                return $this->json(['rating' => (int) $record['rating'], 'nickname' => $record['nickname'], 'content' => $record['content'], 'appVersion' => $record['app_version'], 'date' => $record['created_day'], 'state' => $record['state'], 'pendingEdit' => $pendingEdit ?: null]);
+                return $this->transaction(function () use ($headers): array {
+                    $record = $this->owned($headers);
+                    $pendingEdit = $this->query('SELECT rating, nickname, content, app_version AS appVersion FROM wize_review_edits WHERE review_id = ?', [$record['id']])->fetch();
+                    if ($pendingEdit) { $pendingEdit['rating'] = (int) $pendingEdit['rating']; $pendingEdit['images'] = $this->images->list($record['id'], 'edit'); }
+                    return $this->json(['rating' => (int) $record['rating'], 'nickname' => $record['nickname'], 'content' => $record['content'],
+                        'appVersion' => $record['app_version'], 'date' => $record['created_day'], 'state' => $record['state'],
+                        'images' => $this->images->list($record['id']), 'imageLimits' => $this->images->limits(), 'pendingEdit' => $pendingEdit ?: null]);
+                });
             }
             if (in_array($method, ['GET', 'POST'], true) && $action === 'moderation') {
                 $this->moderator($headers, $ip);
                 if ($method === 'GET') {
-                    $state = $query['state'] ?? 'pending'; $page = $this->page($query);
-                    if ($state === 'edits') {
-                        $count = (int) $this->query("SELECT COUNT(*) FROM wize_review_edits e JOIN wize_reviews r ON r.id = e.review_id WHERE r.state = 'published'")->fetchColumn();
-                        $reviews = $this->records($this->query("SELECT e.review_id AS id, e.rating, e.nickname, e.content, e.app_version AS appVersion, r.created_day AS date, 'edit' AS state, r.rating AS originalRating, r.content AS originalContent FROM wize_review_edits e JOIN wize_reviews r ON r.id = e.review_id WHERE r.state = 'published' ORDER BY e.submitted_at ASC, e.review_id ASC LIMIT ? OFFSET ?", [self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE])->fetchAll());
+                    return $this->transaction(function () use ($query): array {
+                        $state = $query['state'] ?? 'pending'; $page = $this->page($query);
+                        if ($state === 'edits') {
+                            $count = (int) $this->query("SELECT COUNT(*) FROM wize_review_edits e JOIN wize_reviews r ON r.id = e.review_id WHERE r.state = 'published'")->fetchColumn();
+                            $reviews = $this->records($this->query("SELECT e.review_id AS id, e.rating, e.nickname, e.content, e.app_version AS appVersion, r.created_day AS date, 'edit' AS state, r.rating AS originalRating, r.content AS originalContent FROM wize_review_edits e JOIN wize_reviews r ON r.id = e.review_id WHERE r.state = 'published' ORDER BY e.submitted_at ASC, e.review_id ASC LIMIT ? OFFSET ?", [self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE])->fetchAll(), 'edit');
+                            return $this->json(['reviews' => $reviews, 'count' => $count, 'page' => $page, 'pageSize' => self::PAGE_SIZE]);
+                        }
+                        if (!in_array($state, ['pending', 'published'], true)) { throw new ReviewHttpError(400, 'Invalid filter.'); }
+                        $count = (int) $this->query('SELECT COUNT(*) FROM wize_reviews WHERE state = ?', [$state])->fetchColumn();
+                        $reviews = $this->records($this->query('SELECT r.id, r.rating, r.nickname, r.content, r.app_version AS appVersion, r.created_day AS date, r.state, rep.content AS developerReply, rep.updated_day AS replyDate FROM wize_reviews AS r LEFT JOIN wize_review_replies AS rep ON rep.review_id = r.id WHERE r.state = ? ORDER BY r.submitted_at ASC, r.id ASC LIMIT ? OFFSET ?', [$state, self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE])->fetchAll());
                         return $this->json(['reviews' => $reviews, 'count' => $count, 'page' => $page, 'pageSize' => self::PAGE_SIZE]);
-                    }
-                    if (!in_array($state, ['pending', 'published'], true)) { throw new ReviewHttpError(400, 'Invalid filter.'); }
-                    $count = (int) $this->query('SELECT COUNT(*) FROM wize_reviews WHERE state = ?', [$state])->fetchColumn();
-                    $reviews = $this->records($this->query('SELECT r.id, r.rating, r.nickname, r.content, r.app_version AS appVersion, r.created_day AS date, r.state, rep.content AS developerReply, rep.updated_day AS replyDate FROM wize_reviews AS r LEFT JOIN wize_review_replies AS rep ON rep.review_id = r.id WHERE r.state = ? ORDER BY r.submitted_at ASC, r.id ASC LIMIT ? OFFSET ?', [$state, self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE])->fetchAll());
-                    return $this->json(['reviews' => $reviews, 'count' => $count, 'page' => $page, 'pageSize' => self::PAGE_SIZE]);
+                    });
                 }
                 $input = $this->body($headers, $raw);
                 if (in_array($input['action'] ?? null, ['approve-edit', 'reject-edit'], true)) {
@@ -326,8 +418,11 @@ final class ReviewService
                         if (!$edit || !$published) { throw new ReviewHttpError(404, 'Pending review edit unavailable.'); }
                         if ($input['action'] === 'approve-edit') {
                             $this->query("UPDATE wize_reviews SET rating = ?, nickname = ?, content = ?, app_version = ? WHERE id = ? AND state = 'published'", [(int) $edit['rating'], $edit['nickname'], $edit['content'], $edit['app_version'], $input['id']]);
+                            $this->images->replaceLinks($input['id'], 'current', array_column($this->images->list($input['id'], 'edit'), 'id'));
                         }
                         $this->query('DELETE FROM wize_review_edits WHERE review_id = ?', [$input['id']]);
+                        $this->images->replaceLinks($input['id'], 'edit', []);
+                        $this->images->pruneUnused($input['id']);
                         return $this->json(['success' => true]);
                     });
                 }
@@ -349,11 +444,12 @@ final class ReviewService
                     });
                 }
                 if (!$this->validId($input['id'] ?? null) || !in_array($input['action'] ?? '', ['publish', 'remove'], true)) { throw new ReviewHttpError(400, 'Invalid moderation action.'); }
-                if ($input['action'] === 'publish') {
+                return $this->transaction(function () use ($input): array {
                     if (!$this->query('SELECT id FROM wize_reviews WHERE id = ?', [$input['id']])->fetch()) { throw new ReviewHttpError(404, 'Review unavailable.'); }
-                    $this->query("UPDATE wize_reviews SET state = 'published' WHERE id = ?", [$input['id']]);
-                } elseif (!$this->query('DELETE FROM wize_reviews WHERE id = ?', [$input['id']])->rowCount()) { throw new ReviewHttpError(404, 'Review unavailable.'); }
-                return $this->json(['success' => true]);
+                    if ($input['action'] === 'publish') { $this->query("UPDATE wize_reviews SET state = 'published' WHERE id = ?", [$input['id']]); }
+                    else { $this->removeReview($input['id']); }
+                    return $this->json(['success' => true]);
+                });
             }
             throw new ReviewHttpError(404, 'Page not found.');
         } catch (ReviewHttpError $error) {
@@ -361,6 +457,12 @@ final class ReviewService
         } catch (Throwable) {
             // Never log URLs, headers, credentials, review text or SQL exceptions.
             return $this->json(['error' => 'The request could not be completed. Please try again.'], 503);
+        } finally {
+            try {
+                $this->images->discardUnclaimed($this->preparedImages);
+                $this->images->collectGarbage();
+            } catch (Throwable) { /* Scheduled maintenance retries cleanup without changing a committed review. */ }
+            $this->preparedImages = [];
         }
     }
 }

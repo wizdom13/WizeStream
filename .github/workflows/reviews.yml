@@ -15,6 +15,31 @@ permissions:
   contents: read
 
 jobs:
+  browser-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install the browser test runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/review-browser" --no-audit --no-fund --ignore-scripts playwright@1.62.1
+          node "$RUNNER_TEMP/review-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Check review image controls in Chromium
+        env:
+          NODE_PATH: ${{ runner.temp }}/review-browser/node_modules
+          REVIEWS_BROWSER_ARTIFACTS: ${{ runner.temp }}/review-browser-artifacts
+        run: node web/reviews/_private/tests/browser_checks.cjs
+      - name: Upload review browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: review-browser-screenshots
+          path: ${{ runner.temp }}/review-browser-artifacts
+          if-no-files-found: ignore
+
   test:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -46,13 +71,15 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: pdo_mysql
+          extensions: pdo_mysql, gd, exif
+          ini-values: upload_max_filesize=5M, post_max_size=20M, max_file_uploads=3, memory_limit=256M
           coverage: none
       - name: Lint PHP and JavaScript
         run: |
           find web -name '*.php' -print0 | xargs -0 -n1 php -l
           node --check web/reviews/reviews.js
-          node --test web/reviews/_private/tests/review-access.test.cjs
+          node --check web/reviews/review-images.js
+          node --test web/reviews/_private/tests/*.test.cjs
       - name: Test PHP and MySQL across independent workers
         run: php web/reviews/_private/tests/reviews.php
       - name: Test PHP HTTP entry points and private configuration

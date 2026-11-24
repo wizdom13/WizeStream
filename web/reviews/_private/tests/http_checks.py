@@ -13,6 +13,8 @@ import urllib.error
 import urllib.request
 import uuid
 import secrets
+import struct
+import zlib
 
 WEB = Path(__file__).resolve().parents[3]
 if not re.search(r';dbname=wizestream_reviews_test(?:;|$)', os.environ.get('REVIEWS_TEST_DSN', '')):
@@ -20,7 +22,7 @@ if not re.search(r';dbname=wizestream_reviews_test(?:;|$)', os.environ.get('REVI
 
 
 @contextlib.contextmanager
-def server(config_path):
+def server(config_path, ini=None):
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
@@ -31,10 +33,13 @@ def server(config_path):
     config_path.write_text("<?php return [\n" +
         "'public_url'=>" + php(origin + '/reviews/') + ",\n" +
         "'moderator_key'=>" + php('a' * 43) + ",'challenge_key'=>" + php('b' * 43) + ",'rate_key'=>" + php('c' * 43) + ",\n" +
+        "'images_dir'=>" + php(config_path.parent / 'review-images') + ",'per_hour_limit'=>100,\n" +
         "'database'=>['host'=>" + php(database['host']) + ",'port'=>" + database.get('port', '3306') + ",'name'=>" + php(database['dbname']) +
         ",'username'=>" + php(os.environ['REVIEWS_TEST_USER']) + ",'password'=>" + php(os.environ['REVIEWS_TEST_PASSWORD']) + "]];\n")
     env = dict(os.environ, WIZESTREAM_REVIEWS_CONFIG=str(config_path))
-    proc = subprocess.Popen(['php', '-S', f'127.0.0.1:{port}', '-t', str(WEB)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    settings = {'upload_max_filesize': '5M', 'post_max_size': '20M', 'max_file_uploads': '3', 'memory_limit': '256M', **(ini or {})}
+    options = [item for name, value in settings.items() for item in ['-d', f'{name}={value}']]
+    proc = subprocess.Popen(['php', *options, '-S', f'127.0.0.1:{port}', '-t', str(WEB)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         for _ in range(100):
             try:
@@ -56,11 +61,11 @@ def server(config_path):
             proc.wait()
 
 
-def request(origin, path, data=None, headers=None, method=None):
-    method = method or ('POST' if data is not None else 'GET')
+def request(origin, path, data=None, headers=None, method=None, raw=False, body=None):
+    method = method or ('POST' if data is not None or body is not None else 'GET')
     supplied = {'Origin': origin, **(headers or {})}
-    body = None if data is None else json.dumps(data).encode()
     if data is not None:
+        body = json.dumps(data).encode()
         supplied['Content-Type'] = 'application/json'
     req = urllib.request.Request(origin + path, data=body, headers=supplied, method=method)
     try:
@@ -68,7 +73,25 @@ def request(origin, path, data=None, headers=None, method=None):
     except urllib.error.HTTPError as error:
         response = error
     with response:
-        return response.status, response.headers, response.read().decode()
+        content = response.read()
+        return response.status, response.headers, content if raw else content.decode()
+
+
+def multipart(origin, action, data, files, headers=None):
+    boundary = 'wize-test-' + secrets.token_hex(16)
+    parts = [f'--{boundary}\r\nContent-Disposition: form-data; name="payload"\r\n\r\n'.encode() + json.dumps(data).encode() + b'\r\n']
+    for file in files:
+        # Deliberately misleading MIME/name: only decoded bytes may determine stored type and name.
+        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="images[]"; filename="../private.svg"\r\nContent-Type: image/svg+xml\r\n\r\n'.encode() + file + b'\r\n')
+    body = b''.join(parts) + f'--{boundary}--\r\n'.encode()
+    return request(origin, '/reviews/api.php?action=' + action, headers={**(headers or {}), 'Content-Type': f'multipart/form-data; boundary={boundary}'}, body=body)
+
+
+def png():
+    def chunk(kind, value):
+        return struct.pack('!I', len(value)) + kind + value + struct.pack('!I', zlib.crc32(kind + value))
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('!IIBBBBB', 2, 2, 8, 2, 0, 0, 0)) +
+            chunk(b'IDAT', zlib.compress((b'\x00' + b'\xff\x00\x00' * 2) * 2)) + chunk(b'IEND', b''))
 
 
 with tempfile.TemporaryDirectory(prefix='wizestream-private-test-') as private:
@@ -82,9 +105,9 @@ with tempfile.TemporaryDirectory(prefix='wizestream-private-test-') as private:
         assert 'a' * 43 not in page and 'test-only-password' not in page
         status, headers, _ = request(origin, '/reviews/?view=manage')
         assert status == 200 and headers['X-Robots-Tag'] == 'noindex, nofollow'
-        for path in ['service.php', 'bootstrap.php', 'config.example.php', 'cleanup.php', 'make-config.php', 'tests/reviews.php']:
+        for path in ['service.php', 'images.php', 'request.php', 'bootstrap.php', 'config.example.php', 'cleanup.php', 'make-config.php', 'tests/reviews.php', 'tests/images.php']:
             assert request(origin, '/reviews/_private/' + path)[0] == 404, path
-        for path in ['/reviews/reviews.css', '/reviews/reviews.js', '/assets/site.css']:
+        for path in ['/reviews/reviews.css', '/reviews/reviews.js', '/reviews/review-images.js', '/assets/site.css']:
             assert request(origin, path)[0] == 200, path
         _, _, body = request(origin, '/reviews/api.php?action=summary')
         baseline = json.loads(body)['count']
@@ -117,9 +140,62 @@ with tempfile.TemporaryDirectory(prefix='wizestream-private-test-') as private:
         assert status == 200 and headers['Content-Type'].startswith('image/svg+xml') and '<svg' in body
         assert request(origin, '/reviews/api.php?action=reviews', review, {'Origin': 'https://evil.example'})[0] == 403
 
+        # Actual multipart uploads, binary image access and staged publication.
+        _, _, body = request(origin, '/reviews/api.php?action=challenge')
+        challenge_data = json.loads(body)
+        assert challenge_data['imageLimits']['maxCount'] == 3
+        time.sleep(2.1)
+        illustrated = {**review, 'id': str(uuid.uuid4()), 'deletionToken': secrets.token_urlsafe(32),
+                       'challenge': challenge_data['challenge'], 'imageConsent': True, 'newImageCount': 1}
+        status, _, body = multipart(origin, 'reviews', illustrated, [png()])
+        assert status == 201, (status, body)
+        owner = {'X-Review-Authorization': 'Review ' + illustrated['id'] + ':' + illustrated['deletionToken']}
+        _, _, body = request(origin, '/reviews/api.php?action=manage', {}, owner)
+        old_image = json.loads(body)['images'][0]['id']
+        image_path = '/reviews/api.php?action=image&id=' + old_image + '&variant=full'
+        assert request(origin, image_path)[0] == 404
+        assert request(origin, image_path + '&token=' + illustrated['deletionToken'])[0] == 404
+        status, headers, content = request(origin, image_path, headers=owner, raw=True)
+        assert status == 200 and content[:4] == b'RIFF'
+        assert headers['Content-Type'] == 'image/webp' and headers['Cache-Control'] == 'no-store'
+        assert headers['Cross-Origin-Resource-Policy'] == 'same-origin' and headers.get('Set-Cookie') is None
+        assert request(origin, image_path, headers=moderator, raw=True)[0] == 200
+        edits = {'operation': 'edit', 'rating': 2, 'content': 'Illustrated feedback with a replacement image.',
+                 'keepImageIds': [], 'newImageCount': 1, 'imageConsent': True}
+        assert multipart(origin, 'manage', edits, [b'<svg><script>test</script></svg>'], owner)[0] == 400
+        assert multipart(origin, 'manage', {**edits, 'newImageCount': 2}, [png()], owner)[0] == 400
+        assert multipart(origin, 'manage', edits, [png()], {**owner, 'Origin': 'https://evil.example'})[0] == 403
+        assert request(origin, '/reviews/api.php?action=moderation', {'id': illustrated['id'], 'action': 'publish'}, moderator)[0] == 200
+        assert multipart(origin, 'manage', edits, [png()], owner)[0] == 202
+        _, _, body = request(origin, '/reviews/api.php?action=manage', {}, owner)
+        new_image = json.loads(body)['pendingEdit']['images'][0]['id']
+        new_path = '/reviews/api.php?action=image&id=' + new_image + '&variant=thumb'
+        assert request(origin, new_path)[0] == 404 and request(origin, image_path, raw=True)[0] == 200
+        assert request(origin, '/reviews/api.php?action=moderation', {'id': illustrated['id'], 'action': 'approve-edit'}, moderator)[0] == 200
+        assert request(origin, new_path, raw=True)[0] == 200 and request(origin, image_path)[0] == 404
+        assert len(list((Path(private) / 'review-images').glob('*.webp'))) == 2
+        assert request(origin, '/reviews/api.php?action=manage', {'operation': 'delete'}, owner)[0] == 200
+        assert request(origin, new_path)[0] == 404
+        assert list((Path(private) / 'review-images').glob('*.webp')) == []
+
+    # Common hosting limits fail explicitly instead of publishing a partial image set.
+    with server(Path(private) / 'reviews-config.php', {'post_max_size': '1K'}) as origin:
+        status, _, body = multipart(origin, 'reviews', {'newImageCount': 1}, [png() + b'x' * 2000])
+        assert status == 413 and 'server upload limit' in json.loads(body)['error'], (status, body)
+    with server(Path(private) / 'reviews-config.php', {'max_file_uploads': '1'}) as origin:
+        status, _, body = multipart(origin, 'reviews', {'newImageCount': 2}, [png(), png()])
+        assert status == 400 and 'did not arrive' in json.loads(body)['error'], (status, body)
+    with server(Path(private) / 'reviews-config.php', {'upload_max_filesize': '1K'}) as origin:
+        _, _, body = request(origin, '/reviews/api.php?action=challenge')
+        time.sleep(2.1)
+        oversized = {**review, 'id': str(uuid.uuid4()), 'deletionToken': secrets.token_urlsafe(32),
+                     'challenge': json.loads(body)['challenge'], 'newImageCount': 1, 'imageConsent': True}
+        status, _, body = multipart(origin, 'reviews', oversized, [png() + b'x' * 2000])
+        assert status == 413 and 'server upload limit' in json.loads(body)['error'], (status, body)
+
 # The loader refuses a configuration file located in the public website, even if it is PHP.
 with tempfile.TemporaryDirectory(prefix='config-rejection-test-', dir=WEB / 'reviews') as unsafe:
     with server(Path(unsafe) / 'config.local.php') as origin:
         status, _, body = request(origin, '/reviews/api.php?action=summary')
         assert status == 503 and 'test-only-password' not in body and 'a' * 43 not in body
-print('PHP HTTP integration, origin checks, badges, deletion, and private configuration placement passed.')
+print('PHP HTTP integration, multipart limits, private/public images, atomic image edits, origin checks, badges, deletion, and private configuration placement passed.')

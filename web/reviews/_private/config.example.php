@@ -5,6 +5,11 @@ declare(strict_types=1);
 if (!defined('WIZE_REVIEWS_ENTRY')) { http_response_code(404); exit; }
 return [
     'public_url' => 'https://wizestream.org/reviews/',
+    // Optional image uploads: absolute private directory OUTSIDE every document root.
+    // Create its parent first; PHP creates this directory with mode 0700 when needed.
+    // Requires GD with WebP support and EXIF; see README.md for PHP upload limits.
+    'images_dir' => '/home/YOUR_ACCOUNT/wizestream-private/review-images',
+    'image_storage_limit_bytes' => 536870912, // 512 MiB of normalized images and thumbnails.
     'database' => [
         'host' => 'localhost',
         'port' => 3306,
