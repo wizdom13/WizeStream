@@ -4,6 +4,19 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.52.1 (`1052001`)
+
+### Upcoming visibility
+
+- Keep scheduled YouTube broadcasts in Upcoming while they are still waiting, including delayed events and cards without a start time.
+- Preserve confirmed upcoming status in saved feeds and update it when a broadcast starts or becomes a recording.
+- Apply the Upcoming visibility choice consistently while preserving explicit filter selections.
+
+### Subscription editing
+
+- Let subscription editing controls scroll with the channels so complete rows remain reachable above the mini-player, including short landscape windows.
+- Preserve channel selection, reordering and scroll position when moving between browsing and editing.
+
 ## WizeStream 1.52.0 (`1052000`)
 
 ### Floating navigation
