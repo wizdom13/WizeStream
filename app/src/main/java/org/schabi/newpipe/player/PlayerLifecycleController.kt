@@ -274,6 +274,9 @@ internal class PlayerLifecycleController(
         if (resetErrorRecovery) {
             errorController.resetRecovery()
         }
+        if (!preserveQueue) {
+            playbackParametersController.clearLiveCatchup()
+        }
         historyController.stopLearningSession()
         val exoPlayer = player.getExoPlayer()
         val trackSelector = player.getTrackSelectorForLifecycle()

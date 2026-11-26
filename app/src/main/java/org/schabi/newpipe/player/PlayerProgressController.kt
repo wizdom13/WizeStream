@@ -47,6 +47,7 @@ internal class PlayerProgressController(
             return
         }
 
+        player.updateLiveCatchup()
         player.queueRecovery.checkpoint()
         historyController.updateLearningSession()
         if (!player.abRepeat.active) {

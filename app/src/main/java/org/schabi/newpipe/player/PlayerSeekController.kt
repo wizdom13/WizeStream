@@ -104,6 +104,7 @@ internal class PlayerSeekController(private val player: Player) {
     fun seekToDefault() {
         player.channelSkipController.manualSeek(0)
         if (!player.exoPlayerIsNull()) {
+            player.prepareForLiveSeek()
             player.exoPlayer.seekToDefaultPosition()
         }
     }
