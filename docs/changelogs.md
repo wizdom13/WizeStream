@@ -40,6 +40,10 @@ Release history is listed newest first. The number beside each release is its An
 
 - Show cached local and bookmarked playlists while feed updates are being saved, and keep the list stable when feed changes do not affect its contents.
 
+### History controls
+
+- Place Jump to date below the History filters so both filter rows can use the full screen width.
+
 ### Ungrouped subscriptions
 
 - Add a built-in Ungrouped entry for channels without a group, with matching feed refresh, channel navigation and filters that update as memberships change.
