@@ -7,6 +7,7 @@ import com.grack.nanojson.JsonParserException
 import java.io.IOException
 import java.net.URI
 import org.schabi.newpipe.extractor.NewPipe
+import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend
 
@@ -17,7 +18,7 @@ import org.schabi.newpipe.extractor.services.youtube.invidious.InvidiousBackend
  * non-API instances. Companion/media origins remain a separate trust decision.
  */
 object InvidiousInstanceDirectory {
-    private const val DIRECTORY_URL = "https://api.invidious.io/instances.json"
+    internal const val DIRECTORY_URL = "https://api.invidious.io/instances.json"
     private const val MAX_RESPONSE_CHARS = 512_000
     private const val MIN_UPTIME_PERCENT = 90.0
 
@@ -29,21 +30,29 @@ object InvidiousInstanceDirectory {
         val uptime: Double
     )
 
+    sealed class ResponseFailure(message: String, cause: Throwable? = null) : ExtractionException(message, cause) {
+        class Http(val status: Int) : ResponseFailure("The official Invidious directory returned HTTP $status")
+
+        class Invalid(val reason: Reason, cause: Throwable? = null) : ResponseFailure("The official Invidious directory response is ${reason.name}", cause)
+
+        enum class Reason { HTML, TOO_LARGE, INVALID_JSON }
+    }
+
     @JvmStatic
     @Throws(IOException::class, ExtractionException::class)
-    fun load(): List<Entry> {
-        val response = NewPipe.getDownloader().get(DIRECTORY_URL)
+    fun load(): List<Entry> = load(NewPipe.getDownloader())
+
+    internal fun load(downloader: Downloader): List<Entry> {
+        val response = downloader.get(DIRECTORY_URL)
         if (response.responseCode() !in 200..299) {
-            throw ExtractionException(
-                "The official Invidious directory returned HTTP ${response.responseCode()}"
-            )
+            throw ResponseFailure.Http(response.responseCode())
         }
         if (response.getHeader("Content-Type")?.contains("text/html", ignoreCase = true) == true) {
-            throw ExtractionException("The official Invidious directory returned HTML")
+            throw ResponseFailure.Invalid(ResponseFailure.Reason.HTML)
         }
         val body = response.responseBody()
         if (body.length > MAX_RESPONSE_CHARS) {
-            throw ExtractionException("The official Invidious directory response is too large")
+            throw ResponseFailure.Invalid(ResponseFailure.Reason.TOO_LARGE)
         }
         return parse(body)
     }
@@ -54,7 +63,7 @@ object InvidiousInstanceDirectory {
         val directory = try {
             JsonParser.array().from(body)
         } catch (error: JsonParserException) {
-            throw ExtractionException("Invalid official Invidious directory response", error)
+            throw ResponseFailure.Invalid(ResponseFailure.Reason.INVALID_JSON, error)
         }
 
         val entries = mutableListOf<Entry>()

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="invidious_directory_error_title">Could not load directory</string>
+    <string name="invidious_directory_copy_details">Copy details</string>
+    <string name="invidious_directory_error_http">The official directory returned HTTP %1$d. Try again later.</string>
+    <string name="invidious_directory_error_html">The directory returned a web page instead of an instance list. Check whether your network requires sign-in, then retry.</string>
+    <string name="invidious_directory_error_size">The directory response is too large to process.</string>
+    <string name="invidious_directory_error_response">The directory returned an unreadable instance list. Try again later.</string>
+    <string name="invidious_directory_error_limited">The directory is blocking or limiting requests. Try again later.</string>
+    <string name="invidious_directory_error_retry">You can retry or enter a trusted instance manually.</string>
+</resources>
