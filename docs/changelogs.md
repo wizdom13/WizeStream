@@ -24,6 +24,7 @@ Release history is listed newest first. The number beside each release is its An
 
 - Release detail-view player and navigation listeners when the view is destroyed so recreating it does not accumulate callbacks.
 - Keep the mini-player thumbnail loading during detail refreshes so switching a video to background playback shows its artwork.
+- Keep fullscreen aligned with late video dimensions, preserve manual exits, and finish manual fullscreen requests after rotation or player attachment, including tablets with automatic fullscreen disabled.
 
 ### Subscription group actions
 

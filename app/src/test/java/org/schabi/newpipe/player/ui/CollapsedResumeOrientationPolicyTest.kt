@@ -42,4 +42,14 @@ class CollapsedResumeOrientationPolicyTest {
         assertFalse(check(videoSelected = false, fullscreen = true))
         assertFalse(check())
     }
+
+    @Test
+    fun releasesAPlayerOwnedPortraitLockOnTabletResumeWithoutInterruptingNativePip() {
+        assertTrue(
+            CollapsedResumeOrientationPolicy.shouldRestore(true, true, false, false, true, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, true)
+        )
+        assertFalse(
+            CollapsedResumeOrientationPolicy.shouldRestore(true, true, false, true, true, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, true)
+        )
+    }
 }

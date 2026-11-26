@@ -371,6 +371,19 @@ public final class PlayerHolder {
                 }
 
                 @Override
+                public void onVideoContentOrientationChanged() {
+                    if (listener != null) {
+                        listener.onVideoContentOrientationChanged();
+                    }
+                }
+
+                @Override
+                public boolean shouldSuppressAutomaticFullscreenInLandscape() {
+                    return listener != null
+                            && listener.shouldSuppressAutomaticFullscreenInLandscape();
+                }
+
+                @Override
                 public void onMoreOptionsLongClicked() {
                     if (listener != null) {
                         listener.onMoreOptionsLongClicked();
