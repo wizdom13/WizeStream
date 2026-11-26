@@ -27,6 +27,12 @@ class MiniPlayerCollapseOrientationPolicyTest {
     }
 
     @Test
+    fun collapseReleasesATabletLockOwnedByThePlayerButNeverInterruptsNativePip() {
+        assertTrue(MiniPlayerCollapseOrientationPolicy.shouldExitFullscreen(true, false, false, false, true, true))
+        assertFalse(MiniPlayerCollapseOrientationPolicy.shouldExitFullscreen(true, true, false, true, true, true))
+    }
+
+    @Test
     fun androidNativePipAndNonPhoneWindowsRetainTheirOwnOrientation() {
         assertFalse(
             MiniPlayerCollapseOrientationPolicy.shouldExitFullscreen(

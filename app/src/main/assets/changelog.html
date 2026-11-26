@@ -149,6 +149,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <ul>
 <li>Release detail-view player and navigation listeners when the view is destroyed so recreating it does not accumulate callbacks.</li>
 <li>Keep the mini-player thumbnail loading during detail refreshes so switching a video to background playback shows its artwork.</li>
+<li>Keep fullscreen aligned with late video dimensions, preserve manual exits, and finish manual fullscreen requests after rotation or player attachment, including tablets with automatic fullscreen disabled.</li>
 </ul>
 <h3>Subscription group actions</h3>
 <ul>
