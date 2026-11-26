@@ -44,6 +44,10 @@ Release history is listed newest first. The number beside each release is its An
 
 - Add a built-in Ungrouped entry for channels without a group, with matching feed refresh, channel navigation and filters that update as memberships change.
 
+### Comment layout
+
+- Shrink shortened comments and their action rows to the displayed text height, including after expanding and collapsing a long comment.
+
 ### YouTube channel lists
 
 - Keep channel sorting and pagination results visible when YouTube sends a separate filter-header update alongside the video list.
