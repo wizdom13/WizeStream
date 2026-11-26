@@ -62,6 +62,10 @@ Release history is listed newest first. The number beside each release is its An
 
 - Choose how many channel-group rows remain visible in Subscriptions and scroll within longer group lists, while keeping Unlimited as the default and preserving the current group position.
 
+### Danmaku settings
+
+- Update the existing Bullet comments settings sliders immediately after applying changes in the appearance preview, and refresh their values when returning to the settings screen.
+
 ### Custom colors and theme packs
 
 - Apply custom accent seeds consistently to the app and player, refresh seekbar colors after HEX edits,

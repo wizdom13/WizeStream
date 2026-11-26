@@ -1,6 +1,7 @@
 package org.schabi.newpipe.settings
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.TypedArray
 import android.os.Bundle
 import android.os.Parcelable
@@ -17,14 +18,16 @@ class MaterialSliderPreference @JvmOverloads constructor(
 ) : Preference(context, attrs) {
     private val minimum: Int
     private val maximum: Int
-    var value: Int = 0
+    private var initialValue = 0
+    private var currentValue = 0
+    private var observedPreferences: SharedPreferences? = null
+    private val preferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
+        if (changedKey == null || changedKey == key) refreshPersistedValue()
+    }
+    var value: Int
+        get() = currentValue
         set(newValue) {
-            val bounded = newValue.coerceIn(minimum, maximum)
-            if (field != bounded) {
-                field = bounded
-                persistInt(bounded)
-                notifyChanged()
-            }
+            updateValue(newValue, persist = true)
         }
 
     init {
@@ -32,13 +35,46 @@ class MaterialSliderPreference @JvmOverloads constructor(
         minimum = bounds.getInt(R.styleable.MaterialSliderPreference_min, 0)
         maximum = bounds.getInt(R.styleable.MaterialSliderPreference_android_max, 100).coerceAtLeast(minimum)
         bounds.recycle()
+        val defaults = context.obtainStyledAttributes(attrs, intArrayOf(androidx.preference.R.attr.defaultValue, android.R.attr.defaultValue))
+        initialValue = defaults.getInt(if (defaults.hasValue(0)) 0 else 1, minimum)
+        defaults.recycle()
         layoutResource = R.layout.preference_material_slider
     }
 
     override fun onGetDefaultValue(a: TypedArray, index: Int): Any = a.getInt(index, 0)
 
     override fun onSetInitialValue(defaultValue: Any?) {
-        value = getPersistedInt(defaultValue as? Int ?: minimum)
+        if (defaultValue is Int) initialValue = defaultValue
+        value = getPersistedInt(initialValue)
+    }
+
+    override fun onAttached() {
+        super.onAttached()
+        if (shouldPersist()) {
+            observedPreferences = sharedPreferences
+            observedPreferences?.registerOnSharedPreferenceChangeListener(preferenceListener)
+            refreshPersistedValue()
+        }
+    }
+
+    override fun onDetached() {
+        observedPreferences?.unregisterOnSharedPreferenceChangeListener(preferenceListener)
+        observedPreferences = null
+        super.onDetached()
+    }
+
+    private fun refreshPersistedValue() {
+        if (shouldPersist()) updateValue(getPersistedInt(initialValue), persist = false)
+    }
+
+    private fun updateValue(newValue: Int, persist: Boolean) {
+        val bounded = newValue.coerceIn(minimum, maximum)
+        if (currentValue != bounded) {
+            currentValue = bounded
+            // External writers already committed the value; refreshing must not write it back.
+            if (persist) persistInt(bounded)
+            notifyChanged()
+        }
     }
 
     override fun onSaveInstanceState(): Parcelable? {
