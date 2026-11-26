@@ -90,6 +90,10 @@ Release history is listed newest first. The number beside each release is its An
 - Show a source-specific warning before adding an unofficial repository, including the community
   shortcut, or installing a plugin directly from a project, URL, or local file.
 
+### Invidious directory
+
+- Keep official-directory failures visible with a specific reason, an explicit Retry action and copyable diagnostic details. Restore the directory action when leaving settings during a request.
+
 ### Android 10 debug diagnostics
 
 - Add an opt-in, memory-only rendering capture in Android 10 debug builds, with explicit preview, copy and clear controls for investigating disappearing detail content.

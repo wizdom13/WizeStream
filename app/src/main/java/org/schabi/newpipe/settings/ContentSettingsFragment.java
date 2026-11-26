@@ -160,18 +160,21 @@ public class ContentSettingsFragment extends BasePreferenceFragment {
                 }, error -> {
                     restoreInvidiousDirectoryPreference();
                     Log.w(TAG, "Could not load the official Invidious directory", error);
-                    Toast.makeText(requireContext(), R.string.invidious_directory_load_failed,
-                            Toast.LENGTH_LONG).show();
+                    InvidiousDirectoryFailure.show(this, error, this::loadInvidiousDirectory);
                 }));
     }
 
     private void restoreInvidiousDirectoryPreference() {
-        if (!isAdded()) {
+        final Context context = getContext();
+        if (context == null) {
             return;
         }
-        final Preference preference = requirePreference(R.string.invidious_directory_key);
-        preference.setEnabled(true);
-        preference.setSummary(R.string.invidious_directory_summary);
+        final Preference preference = findPreference(
+                context.getString(R.string.invidious_directory_key));
+        if (preference != null) {
+            preference.setEnabled(true);
+            preference.setSummary(R.string.invidious_directory_summary);
+        }
     }
 
     private void showInvidiousDirectory(
@@ -318,6 +321,13 @@ public class ContentSettingsFragment extends BasePreferenceFragment {
         }
 
         return super.onPreferenceTreeClick(preference);
+    }
+
+    @Override
+    public void onDestroyView() {
+        invidiousDirectoryDisposables.clear();
+        restoreInvidiousDirectoryPreference();
+        super.onDestroyView();
     }
 
     @Override
