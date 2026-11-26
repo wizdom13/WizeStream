@@ -440,7 +440,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         String mimeType = resolveMimeType(mission);
 
         if (BuildConfig.DEBUG)
-            Log.v(TAG, "Mime: " + mimeType + " package: " + BuildConfig.APPLICATION_ID + ".provider");
+            Log.v(TAG, "Mime: " + mimeType + " package: " + BuildConfig.APPLICATION_ID + ".localmedia");
 
         DownloadFileIntents.open(mContext, DownloadFileIntents.viewChooser(
                 resolveShareableUri(mission), mimeType));
@@ -476,7 +476,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         if (mission.storage.isDirect()) {
             return FileProvider.getUriForFile(
                 mContext,
-                BuildConfig.APPLICATION_ID + ".provider",
+                BuildConfig.APPLICATION_ID + ".localmedia",
                 new File(URI.create(mission.storage.getUri().toString()))
             );
         } else {

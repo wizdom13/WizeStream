@@ -56,6 +56,7 @@ import org.schabi.newpipe.fragments.list.search.SearchFragment;
 import org.schabi.newpipe.local.bookmark.BookmarkFragment;
 import org.schabi.newpipe.local.feed.FeedFragment;
 import org.schabi.newpipe.local.history.StatisticsPlaylistFragment;
+import org.schabi.newpipe.local.media.LocalMediaExternalPlayback;
 import org.schabi.newpipe.local.media.LocalMediaFragment;
 import org.schabi.newpipe.local.radio.RadioFragment;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
@@ -136,6 +137,9 @@ public final class NavigationHelper {
             return;
         }
         final PlayQueueItem item = playQueue.getItem();
+        if (LocalMediaExternalPlayback.playIfEnabled(activity, item)) {
+            return;
+        }
         if (item != null && !item.isRadio()) {
             openVideoDetailFragment(activity, activity.getSupportFragmentManager(),
                     item.getServiceId(), item.getUrl(), item.getTitle(), playQueue,
@@ -150,6 +154,9 @@ public final class NavigationHelper {
             return;
         }
         final PlayQueueItem item = playQueue.getItem();
+        if (!switchingPlayers && LocalMediaExternalPlayback.playIfEnabled(context, item)) {
+            return;
+        }
         if (item != null && !item.isRadio()) {
             openVideoDetail(context,
                     item.getServiceId(), item.getUrl(), item.getTitle(), playQueue,

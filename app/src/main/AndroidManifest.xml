@@ -294,6 +294,16 @@
                 android:resource="@xml/nnf_provider_paths" />
         </provider>
 
+        <provider
+            android:name=".local.media.LocalMediaFileProvider"
+            android:authorities="${applicationId}.localmedia"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/local_media_paths" />
+        </provider>
+
         <activity
             android:name=".RouterActivity"
             android:excludeFromRecents="true"
