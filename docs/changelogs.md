@@ -64,6 +64,11 @@ Release history is listed newest first. The number beside each release is its An
 
 - Show receiver command failures and add bounded casting error reports identifying the protocol, source format and failing stage while keeping playback on the phone until the receiver starts.
 
+### Local media playback
+
+- Honor the external audio and video player choices when opening downloaded or local files, with temporary read access for the selected file. Preserve local-media queue actions and switching between WizeStream's players.
+- Keep opening and sharing downloaded files working for files saved directly to device storage.
+
 ### Plugin sources
 
 - Add repositories or install individual plugins from public GitHub and GitLab projects, releases,

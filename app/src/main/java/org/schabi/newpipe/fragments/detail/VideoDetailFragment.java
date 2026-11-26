@@ -110,6 +110,7 @@ import org.schabi.newpipe.fragments.list.videos.RelatedItemsFragment;
 import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.local.dialog.PlaylistDialog;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
+import org.schabi.newpipe.local.media.LocalMediaExternalPlayback;
 import org.schabi.newpipe.local.media.LocalMediaThumbnailLoader;
 import org.schabi.newpipe.local.playlist.LocalPlaylistFragment;
 import org.schabi.newpipe.player.PlaybackPresentationMode;
@@ -962,6 +963,9 @@ public final class VideoDetailFragment
         }));
         binding.detailThumbnailRootLayout.setOnClickListener(v -> {
             if (blockUpcomingPlayback()) {
+                return;
+            }
+            if (LocalMediaExternalPlayback.playIfEnabled(requireContext(), currentLocalItem)) {
                 return;
             }
             autoPlayEnabled = true; // forcefully start playing
@@ -2038,6 +2042,9 @@ public final class VideoDetailFragment
         if (showAiPlaybackWarningIfNeeded(() -> openBackgroundPlayer(append))) {
             return;
         }
+        if (!append && LocalMediaExternalPlayback.playIfEnabled(activity, currentLocalItem, true)) {
+            return;
+        }
 
         final boolean useExternalAudioPlayer = PreferenceManager
                 .getDefaultSharedPreferences(activity)
@@ -2050,7 +2057,8 @@ public final class VideoDetailFragment
             player.setRecovery();
         }
 
-        if (useExternalAudioPlayer) {
+        if (useExternalAudioPlayer
+                && (currentLocalItem == null || !currentLocalItem.isLocalMedia())) {
             showExternalAudioPlaybackDialog();
         } else {
             openNormalBackgroundPlayer(append);
@@ -2137,6 +2145,7 @@ public final class VideoDetailFragment
         }
 
         if (!isRestoringPreviousPlayback()
+                && (currentLocalItem == null || !currentLocalItem.isLocalMedia())
                 && PreferenceManager.getDefaultSharedPreferences(activity)
                 .getBoolean(this.getString(R.string.use_external_video_player_key), false)) {
             showExternalVideoPlaybackDialog();
