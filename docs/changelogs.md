@@ -34,6 +34,10 @@ Release history is listed newest first. The number beside each release is its An
 
 - Add Most viewed first to the subscription feed, sorting cached view counts before pagination while keeping videos with unknown counts last.
 
+### Playlist loading
+
+- Show cached local and bookmarked playlists while feed updates are being saved, and keep the list stable when feed changes do not affect its contents.
+
 ### Ungrouped subscriptions
 
 - Add a built-in Ungrouped entry for channels without a group, with matching feed refresh, channel navigation and filters that update as memberships change.

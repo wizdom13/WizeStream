@@ -6,6 +6,7 @@
 
 package org.schabi.newpipe.database.playlist.dao
 
+import android.database.Cursor
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.RewriteQueriesToDropUnusedColumns
@@ -20,6 +21,22 @@ import org.schabi.newpipe.database.playlist.model.PlaylistStreamEntity
 import org.schabi.newpipe.database.stream.model.StreamEntity
 
 data class QuickAddStreamKey(val serviceId: Int, val url: String)
+
+private const val PROFILE_METADATA_QUERY = """
+    SELECT playlists.uid, name, is_thumbnail_permanent, thumbnail_stream_id,
+    display_index,
+    (
+        SELECT thumbnail_url
+        FROM streams
+        WHERE streams.uid = thumbnail_stream_id
+    ) AS thumbnail_url,
+    COALESCE(COUNT(playlist_id), 0) AS streamCount
+    FROM playlists
+    LEFT JOIN playlist_stream_join ON playlists.uid = playlist_id
+    WHERE playlists.profile_id = :profileId
+    GROUP BY playlists.uid
+    ORDER BY display_index
+"""
 
 @Dao
 interface PlaylistStreamDAO : BasicDAO<PlaylistStreamEntity> {
@@ -224,26 +241,14 @@ interface PlaylistStreamDAO : BasicDAO<PlaylistStreamEntity> {
     fun getPlaylistMetadata(): Flowable<MutableList<PlaylistMetadataEntry>>
 
     @Transaction
-    @Query(
-        """
-        SELECT playlists.uid, name, is_thumbnail_permanent, thumbnail_stream_id,
-        display_index,
-        (
-            SELECT thumbnail_url
-            FROM streams
-            WHERE streams.uid = thumbnail_stream_id
-        ) AS thumbnail_url,
-        COALESCE(COUNT(playlist_id), 0) AS streamCount
-        FROM playlists
-        LEFT JOIN playlist_stream_join ON playlists.uid = playlist_id
-        WHERE playlists.profile_id = :profileId
-        GROUP BY playlists.uid
-        ORDER BY display_index
-        """
-    )
+    @Query(PROFILE_METADATA_QUERY)
     fun getPlaylistMetadataForProfile(
         profileId: String
     ): Flowable<MutableList<PlaylistMetadataEntry>>
+
+    /** Only for the window-checked initial snapshot in PlaylistMetadataSnapshots. */
+    @Query(PROFILE_METADATA_QUERY)
+    fun getPlaylistMetadataCursorForProfile(profileId: String): Cursor
 
     @RewriteQueriesToDropUnusedColumns
     @Transaction
