@@ -7,7 +7,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import io.reactivex.rxjava3.core.Notification
 import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.processors.PublishProcessor
+import io.reactivex.rxjava3.processors.UnicastProcessor
 import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
@@ -120,7 +120,8 @@ class PlaylistRefreshLoadingTest {
             val afterCommit: () -> Unit = { committed.countDown() }
             afterCommit
         }
-        val source = PublishProcessor.create<Notification<FeedUpdateInfo>>()
+        // doOnSubscribe can precede registration; buffer the update until the subscriber is ready.
+        val source = UnicastProcessor.create<Notification<FeedUpdateInfo>>()
         val subscribed = CountDownLatch(1)
         val refresh = manager.storeResults(source.doOnSubscribe { subscribed.countDown() }).test()
         disposables.add(refresh)
