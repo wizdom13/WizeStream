@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_chat_capture_resume">Resume recording</string>
+    <string name="live_chat_capture_saving">Saving chat…</string>
+    <string name="live_chat_capture_retry_save">Retry saving</string>
+    <string name="live_chat_capture_limit">Recording limit reached</string>
+    <string name="live_chat_capture_save_failure">Could not save live chat. Tap Retry saving to keep these messages.</string>
+    <string name="live_chat_capture_source_failure">Chat recording stopped because the chat source failed. Captured messages were saved.</string>
+</resources>

@@ -60,6 +60,12 @@ Release history is listed newest first. The number beside each release is its An
 
 - View weekly or monthly activity for a subscribed channel using retained feed history, with the latest observed upload, the configured feed time window and clear notices when local history is incomplete.
 
+### Live chat recording
+
+- Respond immediately to Stop recording, show saving progress and update chat controls after saving or recreating the view.
+- Resume a saved recording by appending to its existing messages and timeline. Share a limit of 20 minutes of active capture or 5,000 messages across resumptions; pauses remain gaps in the timeline and do not use the capture-time budget.
+- Keep earlier saved messages intact if reading or saving fails, offer Retry saving for captured messages, and discard pending capture when Incognito is enabled or the profile changes or is deleted.
+
 ### Live playback
 
 - Return accelerated DVR playback to normal speed when it catches up to live, including Go live and behind-window recovery, while preserving saved playback speed choices and the rewind window.

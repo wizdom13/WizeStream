@@ -11,7 +11,9 @@ import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -26,6 +28,7 @@ import org.schabi.newpipe.util.ContentBlockingHelper
 
 /** Read-only live chat. No requests while this tab is hidden or the app is backgrounded. */
 class LiveChatFragment : Fragment() {
+    internal var recordingController = LiveChatRecorder.controller
     private var collection: Job? = null
     private var overlayChosen = false
     private val modeListener = SharedPreferences.OnSharedPreferenceChangeListener { preferences, key ->
@@ -58,12 +61,20 @@ class LiveChatFragment : Fragment() {
         val captureButton = view.findViewById<Button>(R.id.liveChatCapture)
         val savedButton = view.findViewById<Button>(R.id.liveChatSaved)
         fun updateButtons() {
-            val capturing = LiveChatRecorder.isRecording(chatService, chatUrl)
+            val phase = recordingController.stateFor(requireContext(), chatService, chatUrl)?.phase
+            val hasSaved = LiveChatRecorder.hasSaved(requireContext(), chatService, chatUrl)
             captureButton.setText(
-                if (capturing) R.string.live_chat_capture_stop else R.string.live_chat_capture_start
+                when (phase) {
+                    LiveChatRecorder.Phase.STARTING, LiveChatRecorder.Phase.RECORDING -> R.string.live_chat_capture_stop
+                    LiveChatRecorder.Phase.SAVING -> R.string.live_chat_capture_saving
+                    LiveChatRecorder.Phase.SAVE_FAILED -> R.string.live_chat_capture_retry_save
+                    LiveChatRecorder.Phase.LIMIT -> R.string.live_chat_capture_limit
+                    else -> if (hasSaved) R.string.live_chat_capture_resume else R.string.live_chat_capture_start
+                }
             )
+            captureButton.isEnabled = phase != LiveChatRecorder.Phase.SAVING && phase != LiveChatRecorder.Phase.LIMIT
             savedButton.setText(
-                if (LiveChatRecorder.hasSaved(requireContext(), chatService, chatUrl)) {
+                if (hasSaved) {
                     R.string.live_chat_saved_badge
                 } else {
                     R.string.live_chat_saved_open
@@ -71,9 +82,20 @@ class LiveChatFragment : Fragment() {
             )
         }
         captureButton.setOnClickListener {
-            if (LiveChatRecorder.isRecording(chatService, chatUrl)) {
-                LiveChatRecorder.stop(chatService, chatUrl)
-            } else if (!LiveChatRecorder.start(requireContext(), chatService, chatUrl)) {
+            val phase = recordingController.stateFor(requireContext(), chatService, chatUrl)?.phase
+            val accepted = when (phase) {
+                LiveChatRecorder.Phase.STARTING, LiveChatRecorder.Phase.RECORDING -> {
+                    recordingController.stop(chatService, chatUrl)
+                    true
+                }
+
+                LiveChatRecorder.Phase.SAVE_FAILED -> recordingController.retrySaving(requireContext(), chatService, chatUrl)
+
+                LiveChatRecorder.Phase.SAVING, LiveChatRecorder.Phase.LIMIT -> true
+
+                else -> recordingController.start(requireContext(), chatService, chatUrl)
+            }
+            if (!accepted) {
                 android.widget.Toast.makeText(
                     requireContext(),
                     R.string.live_chat_capture_busy,
@@ -86,6 +108,23 @@ class LiveChatFragment : Fragment() {
             LiveChatRecordingDialog.show(requireContext(), chatService, chatUrl)
         }
         updateButtons()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                recordingController.state.collect {
+                    updateButtons()
+                    val failure = recordingController.stateFor(requireContext(), chatService, chatUrl)?.failure
+                    val message = when (failure) {
+                        LiveChatRecorder.Failure.READ -> R.string.live_chat_capture_read_failure
+                        LiveChatRecorder.Failure.SAVE -> R.string.live_chat_capture_save_failure
+                        LiveChatRecorder.Failure.SOURCE -> R.string.live_chat_capture_source_failure
+                        null -> null
+                    }
+                    if (message != null) {
+                        android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
         PreferenceManager.getDefaultSharedPreferences(requireContext())
             .registerOnSharedPreferenceChangeListener(modeListener)
         view.findViewById<Button>(R.id.liveChatDanmaku).setOnClickListener {
@@ -125,18 +164,6 @@ class LiveChatFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        val args = arguments
-        if (args != null && view != null) {
-            val service = args.getInt(SERVICE)
-            val link = args.getString(URL).orEmpty()
-            view?.findViewById<Button>(R.id.liveChatCapture)?.setText(
-                if (LiveChatRecorder.isRecording(service, link)) {
-                    R.string.live_chat_capture_stop
-                } else {
-                    R.string.live_chat_capture_start
-                }
-            )
-        }
         startIfVisible()
     }
 
