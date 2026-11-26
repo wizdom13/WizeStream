@@ -4,6 +4,8 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.53.0 (`1053000`)
+
 ### Retained subscription alerts
 
 - Optionally keep future new-video subscription alerts until closed, with offline, silent restoration after restarting the app, rebooting or updating. Close one video, a channel or all retained alerts for the current profile; opening content keeps its alert. System swipes, where Android permits them, also close alerts permanently. Turning the option or new-video notifications off clears retained alerts.
@@ -15,7 +17,7 @@ Release history is listed newest first. The number beside each release is its An
 - Pause feed updates for individual channels or selected subscriptions, with visible and accessible mute states in channel lists and the subscription editor.
 - Move muted subscriptions to the bottom from Arrange subscriptions, keeping section boundaries and relative order. Save to keep the arrangement; alphabetical remains the default.
 - Refresh Arrange subscriptions with Material 3 action buttons, typography, drag handles and an outlined separator editor that follow the active theme.
-- Skip muted channels during All, group, Ungrouped and background refreshes, including forced refreshes and new-video alerts. Keep cached videos, saved alert preferences and direct channel browsing and refresh available.
+- Skip muted channels during All, group, Ungrouped and background refreshes, including forced refreshes and new-video alerts. Keep cached videos, saved alert preferences and direct channel-page browsing and reloading available.
 - Keep mute choices local to each profile, default existing subscriptions to unmuted on upgrade, and preserve choices during metadata updates or repeat imports. Portable subscription exports and device sync keep their current format.
 
 ### Download metadata
