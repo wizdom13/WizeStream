@@ -143,7 +143,7 @@ public class LocalPlaylistManager {
     }
 
     public Flowable<List<PlaylistMetadataEntry>> getPlaylists() {
-        return playlistStreamTable.getPlaylistMetadataForProfile(profileId)
+        return PlaylistMetadataSnapshots.local(database, profileId)
                 .subscribeOn(Schedulers.io());
     }
 

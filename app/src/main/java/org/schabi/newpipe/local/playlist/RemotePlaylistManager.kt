@@ -21,7 +21,7 @@ class RemotePlaylistManager @JvmOverloads constructor(
     private val playlistRemoteTable = database.playlistRemoteDAO()
 
     val playlists: Flowable<MutableList<PlaylistRemoteEntity>>
-        get() = playlistRemoteTable.getPlaylistsForProfile(profileId)
+        get() = PlaylistMetadataSnapshots.remote(database, profileId)
             .subscribeOn(Schedulers.io())
 
     fun getPlaylist(playlistId: Long): Flowable<PlaylistRemoteEntity> {

@@ -5,12 +5,19 @@
 
 package org.schabi.newpipe.database.playlist.dao
 
+import android.database.Cursor
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
 import io.reactivex.rxjava3.core.Flowable
 import org.schabi.newpipe.database.BasicDAO
 import org.schabi.newpipe.database.playlist.model.PlaylistRemoteEntity
+
+private const val PROFILE_PLAYLISTS_QUERY = """
+    SELECT * FROM remote_playlists
+    WHERE profile_id = :profileId
+    ORDER BY display_index
+"""
 
 @Dao
 interface PlaylistRemoteDAO : BasicDAO<PlaylistRemoteEntity> {
@@ -101,14 +108,12 @@ interface PlaylistRemoteDAO : BasicDAO<PlaylistRemoteEntity> {
     @get:Query("SELECT * FROM remote_playlists ORDER BY display_index")
     val playlists: Flowable<MutableList<PlaylistRemoteEntity>>
 
-    @Query(
-        """
-        SELECT * FROM remote_playlists
-        WHERE profile_id = :profileId
-        ORDER BY display_index
-        """
-    )
+    @Query(PROFILE_PLAYLISTS_QUERY)
     fun getPlaylistsForProfile(profileId: String): Flowable<MutableList<PlaylistRemoteEntity>>
+
+    /** Only for the window-checked initial snapshot in PlaylistMetadataSnapshots. */
+    @Query(PROFILE_PLAYLISTS_QUERY)
+    fun getPlaylistsCursorForProfile(profileId: String): Cursor
 
     @Query(
         """
