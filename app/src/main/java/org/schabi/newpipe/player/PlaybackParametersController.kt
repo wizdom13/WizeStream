@@ -19,6 +19,7 @@ import org.schabi.newpipe.util.StreamTypeUtil
 internal class PlaybackParametersController(private val player: Player) {
     private var streamType: StreamType? = null
     private var streamUrl: String? = null
+    private val liveCatchup = LiveCatchupController(player)
 
     val skipSilenceAvailable: Boolean
         get() {
@@ -34,7 +35,14 @@ internal class PlaybackParametersController(private val player: Player) {
     fun setStream(item: PlayQueueItem?) {
         streamType = item?.streamType
         streamUrl = item?.url
+        liveCatchup.setItem(item)
     }
+
+    fun updateLiveCatchup() = liveCatchup.update()
+
+    fun prepareForLiveSeek() = liveCatchup.beforeDefaultSeek()
+
+    fun clearLiveCatchup() = liveCatchup.clear()
 
     private val preferredSkipSilence: Boolean
         get() = player.prefs.getBoolean(
@@ -67,10 +75,22 @@ internal class PlaybackParametersController(private val player: Player) {
     fun setSpeedTemporarily(speed: Float) {
         if (!player.exoPlayerIsNull()) {
             player.exoPlayer.playbackParameters = PlaybackParameters(speed, pitch)
+            updateLiveCatchup()
+        }
+    }
+
+    fun restoreSpeedAfterTemporaryChange(speed: Float) {
+        if (!player.exoPlayerIsNull()) {
+            // A long press may have caught up while held. Its saved speed must not restart
+            // acceleration on release, even if the live window has advanced in the meantime.
+            setSpeedTemporarily(
+                liveCatchup.profileSpeed(player.currentItem ?: player.playQueue?.item, speed)
+            )
         }
     }
 
     fun setParameters(speed: Float, pitch: Float, skipSilence: Boolean) {
+        liveCatchup.onParametersRequested()
         val roundedSpeed = Math.round(speed * DECIMAL_SCALE) / DECIMAL_SCALE
         val roundedPitch = Math.round(pitch * DECIMAL_SCALE) / DECIMAL_SCALE
         val currentInfo = player.currentStreamInfo.orElse(null)
@@ -107,6 +127,7 @@ internal class PlaybackParametersController(private val player: Player) {
     fun applyParameters(speed: Float, pitch: Float, skipSilence: Boolean) {
         player.exoPlayer.playbackParameters = PlaybackParameters(speed, pitch)
         player.exoPlayer.skipSilenceEnabled = skipSilence && skipSilenceAvailable
+        updateLiveCatchup()
     }
 
     fun refreshSkipSilence() {
@@ -124,7 +145,10 @@ internal class PlaybackParametersController(private val player: Player) {
         }
         val preferredSpeed = PlayerHelper.retrievePlaybackParametersFromPrefs(player).speed
         val targetSpeed = resolvePlaybackSpeed(item.streamType, profileSpeed, preferredSpeed)
-        player.exoPlayer.playbackParameters = PlaybackParameters(targetSpeed, pitch)
+        player.exoPlayer.playbackParameters = PlaybackParameters(
+            liveCatchup.profileSpeed(item, targetSpeed),
+            pitch
+        )
         refreshSkipSilence()
     }
 
@@ -138,7 +162,10 @@ internal class PlaybackParametersController(private val player: Player) {
         }
         val preferredSpeed = PlayerHelper.retrievePlaybackParametersFromPrefs(player).speed
         val targetSpeed = resolvePlaybackSpeed(info.streamType, profileSpeed, preferredSpeed)
-        player.exoPlayer.playbackParameters = PlaybackParameters(targetSpeed, pitch)
+        player.exoPlayer.playbackParameters = PlaybackParameters(
+            liveCatchup.profileSpeed(player.currentItem ?: player.playQueue?.item, targetSpeed),
+            pitch
+        )
         refreshSkipSilence()
     }
 

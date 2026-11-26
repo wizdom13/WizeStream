@@ -144,6 +144,7 @@ internal class PlayerErrorController(
         when (error.errorCode) {
             ERROR_CODE_BEHIND_LIVE_WINDOW -> {
                 isCatchableException = true
+                player.prepareForLiveSeek()
                 player.exoPlayer.seekToDefaultPosition()
                 player.exoPlayer.prepare()
                 player.onBuffering()

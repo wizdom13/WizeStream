@@ -144,7 +144,7 @@ abstract class BasePlayerGestureListener(
             return
         }
 
-        player.setPlaybackSpeedTemporarily(previousPlaybackSpeed)
+        player.restorePlaybackSpeedAfterTemporaryChange(previousPlaybackSpeed)
         isHoldToSpeedActive = false
     }
 

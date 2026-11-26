@@ -47,6 +47,7 @@ Release history is listed newest first. The number beside each release is its An
 
 ### Live playback
 
+- Return accelerated DVR playback to normal speed when it catches up to live, including Go live and behind-window recovery, while preserving saved playback speed choices and the rewind window.
 - Include coarse network availability, background restrictions and power state in playback error reports to help diagnose cellular and background failures.
 - Preserve DVR playback for live DASH windows that advance from unbounded segment templates without periodic manifest reloads.
 

@@ -416,6 +416,12 @@ class Player(
 
     fun setPlaybackSpeedTemporarily(speed: Float) = playbackParametersController.setSpeedTemporarily(speed)
 
+    fun restorePlaybackSpeedAfterTemporaryChange(speed: Float) = playbackParametersController.restoreSpeedAfterTemporaryChange(speed)
+
+    internal fun updateLiveCatchup() = playbackParametersController.updateLiveCatchup()
+
+    internal fun prepareForLiveSeek() = playbackParametersController.prepareForLiveSeek()
+
     val playbackPitch: Float
         get() = playbackParametersController.pitch
 

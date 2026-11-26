@@ -33,6 +33,7 @@ internal class PlayerMedia3ListenerController(
 
     fun onEvents(media3Player: Media3Player) {
         metadataController.onEvents(media3Player)
+        playbackParametersController.updateLiveCatchup()
         // A seamless item transition can reuse the decoder without another size or first-frame
         // callback. Read the settled player state after the transition cleared the old geometry.
         if (refreshVideoGeometry) {
@@ -51,6 +52,7 @@ internal class PlayerMedia3ListenerController(
 
     fun onTimelineChanged(timeline: Timeline, reason: Int) {
         playbackParametersController.refreshSkipSilence()
+        playbackParametersController.updateLiveCatchup()
         player.UIs().call { ui ->
             if (ui is org.schabi.newpipe.player.ui.VideoPlayerUi) ui.onPlaybackTimelineChanged()
         }
