@@ -1887,6 +1887,8 @@
     <string name="subscription_separator_add">Add separator</string>
     <string name="subscription_separator_name">Separator name</string>
     <string name="subscription_order_reset">Reset to alphabetical order</string>
+    <string name="subscription_order_muted_bottom">Muted channels at bottom</string>
+    <string name="subscription_order_muted_bottom_help">Moves muted channels to the bottom of each section.</string>
     <string name="subscription_order_load_failed">Could not load subscriptions</string>
     <string name="subscription_order_drag">Drag to reorder</string>
     <string name="blocked_content_search_hint">Search this blocklist</string>

@@ -54,6 +54,25 @@ class SubscriptionLayout(context: Context, profileId: String) {
             }
         }
 
+        /** Keeps section boundaries and relative order while placing muted channels last. */
+        fun moveMutedChannelsToBottom(entries: List<Entry>, mutedKeys: Set<String>): List<Entry> {
+            val arranged = ArrayList<Entry>(entries.size)
+            val muted = mutableListOf<Entry>()
+            entries.forEach { entry ->
+                if (entry.separator != null) {
+                    arranged.addAll(muted)
+                    muted.clear()
+                    arranged.add(entry)
+                } else if (entry.key in mutedKeys) {
+                    muted.add(entry)
+                } else {
+                    arranged.add(entry)
+                }
+            }
+            arranged.addAll(muted)
+            return arranged
+        }
+
         fun encode(entries: List<Entry>): String = JSONArray().apply {
             entries.forEach { entry ->
                 put(
