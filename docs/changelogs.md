@@ -4,6 +4,18 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Retained subscription alerts
+
+- Optionally keep future new-video subscription alerts until closed, with offline, silent restoration after restarting the app, rebooting or updating. Close one video, a channel or all retained alerts for the current profile; opening content keeps its alert. System swipes, where Android permits them, also close alerts permanently. Turning the option or new-video notifications off clears retained alerts.
+- Store pending alerts independently of the feed cache and isolate them by profile. Existing notifications keep their current behavior unless this option is enabled.
+- Keep already retained alerts when muting a channel, while preventing a pending batch from sounding if that channel is muted before it is posted.
+
+### Muted feeds
+
+- Pause feed updates for individual channels or selected subscriptions, with visible and accessible mute states in channel lists and the subscription editor.
+- Skip muted channels during All, group, Ungrouped and background refreshes, including forced refreshes and new-video alerts. Keep cached videos, saved alert preferences and direct channel browsing and refresh available.
+- Keep mute choices local to each profile, default existing subscriptions to unmuted on upgrade, and preserve choices during metadata updates or repeat imports. Portable subscription exports and device sync keep their current format.
+
 ### Download metadata
 
 - Keep download status and localized dates readable without overlapping uploader names or file sizes, including narrow layouts, large text and right-to-left languages.
