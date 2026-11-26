@@ -55,4 +55,31 @@ class SubscriptionLayoutTest {
     fun duplicatePositionsAreRemoved() {
         assertEquals(listOf(Entry("b"), Entry("a")), SubscriptionLayout.reconcile(listOf(Entry("b"), Entry("b")), listOf("a", "b")))
     }
+
+    @Test
+    fun mutedChannelsMoveStablyWithinEachSectionWithoutChangingSeparators() {
+        val first = Entry("separator:first", "First")
+        val empty = Entry("separator:empty", "Empty")
+        val last = Entry("separator:last", "Last")
+        val entries = listOf(Entry("muted-a"), Entry("active-b"), Entry("muted-c"), Entry("active-d"), first, empty, Entry("muted-e"), Entry("active-f"), last)
+        val expected = listOf(Entry("active-b"), Entry("active-d"), Entry("muted-a"), Entry("muted-c"), first, empty, Entry("active-f"), Entry("muted-e"), last)
+        val muted = setOf("muted-a", "muted-c", "muted-e")
+
+        assertEquals(expected, SubscriptionLayout.moveMutedChannelsToBottom(entries, muted))
+        assertEquals("muted-a", entries.first().key)
+        assertEquals(expected, SubscriptionLayout.moveMutedChannelsToBottom(expected, muted))
+    }
+
+    @Test
+    fun mutedOrderingUsesFullChannelKeysAndKeepsNoOpLayoutsUnchanged() {
+        val firstService = Entry("channel:0:https://example.com/shared")
+        val secondService = Entry("channel:1:https://example.com/shared")
+        val separator = Entry("separator:section", "Section")
+        val entries = listOf(separator, firstService, secondService)
+
+        assertEquals(listOf(separator, secondService, firstService), SubscriptionLayout.moveMutedChannelsToBottom(entries, setOf(firstService.key, separator.key)))
+        assertEquals(entries, SubscriptionLayout.moveMutedChannelsToBottom(entries, emptySet()))
+        assertEquals(entries, SubscriptionLayout.moveMutedChannelsToBottom(entries, setOf(firstService.key, secondService.key)))
+        assertEquals(emptyList<Entry>(), SubscriptionLayout.moveMutedChannelsToBottom(emptyList(), setOf(firstService.key)))
+    }
 }
