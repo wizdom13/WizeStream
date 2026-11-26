@@ -51,6 +51,157 @@ class DatabaseMigrationTest {
     )
 
     @Test
+    fun migrate35to36PreservesMuteChoicesAndCachedContentWithoutInventingPendingAlerts() {
+        testHelper.createDatabase(AppDatabase.DATABASE_NAME, Migrations.DB_VER_35).use { database ->
+            database.execSQL(
+                "INSERT INTO subscriptions (uid, service_id, url, name, notification_mode, " +
+                    "notification_keywords, profile_id, feed_muted) VALUES " +
+                    "(41, 0, 'https://example.com/channel', 'Channel', 2, 'science', 'profile-a', 1), " +
+                    "(43, 0, 'https://example.com/channel', 'Other profile', 1, '', 'profile-b', 0)"
+            )
+            database.execSQL(
+                "INSERT INTO streams (uid, service_id, url, title, stream_type, duration, uploader) " +
+                    "VALUES (42, 0, 'https://example.com/cached', 'Cached video', 'VIDEO_STREAM', 60, 'Cached channel')"
+            )
+            database.execSQL("INSERT INTO feed (stream_id, subscription_id, youtube_mode_mask, first_discovered_at) VALUES (42, 41, 1, 1000)")
+        }
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_36,
+            true,
+            Migrations.MIGRATION_35_36
+        ).use { migrated ->
+            migrated.query("SELECT uid, profile_id, notification_mode, notification_keywords, feed_muted FROM subscriptions ORDER BY uid").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(41L, cursor.getLong(0))
+                assertEquals("profile-a", cursor.getString(1))
+                assertEquals(2, cursor.getInt(2))
+                assertEquals("science", cursor.getString(3))
+                assertEquals(1, cursor.getInt(4))
+                assertTrue(cursor.moveToNext())
+                assertEquals(43L, cursor.getLong(0))
+                assertEquals("profile-b", cursor.getString(1))
+                assertEquals(1, cursor.getInt(2))
+                assertEquals("", cursor.getString(3))
+                assertEquals(0, cursor.getInt(4))
+                assertFalse(cursor.moveToNext())
+            }
+            migrated.query("SELECT title FROM streams WHERE uid = 42").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("Cached video", cursor.getString(0))
+            }
+            migrated.query("SELECT stream_id, subscription_id, youtube_mode_mask, first_discovered_at FROM feed").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(listOf(42L, 41L, 1L, 1000L), (0..3).map(cursor::getLong))
+                assertFalse(cursor.moveToNext())
+            }
+            migrated.query("SELECT COUNT(*) FROM pending_stream_notifications").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(0))
+            }
+            migrated.execSQL(
+                "INSERT INTO pending_stream_notifications " +
+                    "(profile_id, generation, service_id, stream_url, channel_url, channel_name, stream_title, created_at) " +
+                    "VALUES ('profile-a', 'generation-a', 0, 'https://example.com/video', 'https://example.com/channel', 'Channel', 'New video', 123)"
+            )
+            migrated.query("SELECT dismissed FROM pending_stream_notifications").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(0))
+            }
+            migrated.query("PRAGMA foreign_key_check").use { cursor -> assertFalse(cursor.moveToFirst()) }
+        }
+    }
+
+    @Test
+    fun migrate34through36KeepsUnmutedDefaultAndEmptyPendingAlerts() {
+        testHelper.createDatabase(AppDatabase.DATABASE_NAME, Migrations.DB_VER_34).use { database ->
+            database.execSQL("INSERT INTO subscriptions (uid, service_id, url, name, notification_mode, profile_id) VALUES (41, 0, 'https://example.com/channel', 'Channel', 1, 'profile-a')")
+            database.execSQL("INSERT INTO streams (uid, service_id, url, title, stream_type, duration, uploader) VALUES (42, 0, 'https://example.com/cached', 'Cached video', 'VIDEO_STREAM', 60, 'Channel')")
+            database.execSQL("INSERT INTO feed (stream_id, subscription_id, youtube_mode_mask, first_discovered_at) VALUES (42, 41, 1, 1000)")
+        }
+        testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_36,
+            true,
+            Migrations.MIGRATION_34_35,
+            Migrations.MIGRATION_35_36
+        ).use { migrated ->
+            migrated.query("SELECT subscriptions.profile_id, subscriptions.feed_muted, streams.title FROM feed INNER JOIN subscriptions ON feed.subscription_id = subscriptions.uid INNER JOIN streams ON feed.stream_id = streams.uid").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("profile-a", cursor.getString(0))
+                assertEquals(0, cursor.getInt(1))
+                assertEquals("Cached video", cursor.getString(2))
+                assertFalse(cursor.moveToNext())
+            }
+            migrated.query("SELECT COUNT(*) FROM pending_stream_notifications").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(0))
+            }
+            migrated.query("PRAGMA foreign_key_check").use { cursor -> assertFalse(cursor.moveToFirst()) }
+        }
+    }
+
+    @Test
+    fun migrate34to35PreservesSubscriptionsAndFeedWithUnmutedDefaults() {
+        testHelper.createDatabase(AppDatabase.DATABASE_NAME, Migrations.DB_VER_34).use { database ->
+            database.execSQL(
+                "INSERT INTO subscriptions (uid, service_id, url, name, notification_mode, " +
+                    "notification_keywords, youtube_mode_mask, profile_id, handle) VALUES " +
+                    "(41, 0, 'https://example.com/channel', 'Channel', 2, 'science', 3, 'profile-a', '@channel'), " +
+                    "(42, 0, 'https://example.com/channel', 'Other profile', 1, '', 1, 'profile-b', NULL)"
+            )
+            database.execSQL("INSERT INTO streams (uid, service_id, url, title, stream_type, duration, uploader) VALUES (7, 0, 'https://example.com/video', 'Cached', 'VIDEO_STREAM', 60, 'Channel')")
+            database.execSQL("INSERT INTO feed (stream_id, subscription_id, youtube_mode_mask, first_discovered_at) VALUES (7, 41, 2, 1000)")
+            database.execSQL("INSERT INTO feed_last_updated (subscription_id, youtube_mode_mask, last_updated) VALUES (41, 2, 2000)")
+            database.execSQL("INSERT INTO feed_group (uid, name, icon_id, sort_order, profile_id) VALUES (9, 'Group', 0, 0, 'profile-a')")
+            database.execSQL("INSERT INTO feed_group_subscription_join (group_id, subscription_id) VALUES (9, 41)")
+        }
+        val migrated = testHelper.runMigrationsAndValidate(
+            AppDatabase.DATABASE_NAME,
+            Migrations.DB_VER_35,
+            true,
+            Migrations.MIGRATION_34_35
+        )
+        migrated.query("SELECT uid, profile_id, notification_mode, notification_keywords, youtube_mode_mask, handle, feed_muted FROM subscriptions ORDER BY uid").use { cursor ->
+            assertTrue(cursor.moveToNext())
+            assertEquals(41L, cursor.getLong(0))
+            assertEquals("profile-a", cursor.getString(1))
+            assertEquals(2, cursor.getInt(2))
+            assertEquals("science", cursor.getString(3))
+            assertEquals(3, cursor.getInt(4))
+            assertEquals("@channel", cursor.getString(5))
+            assertEquals(0, cursor.getInt(6))
+            assertTrue(cursor.moveToNext())
+            assertEquals(42L, cursor.getLong(0))
+            assertEquals("profile-b", cursor.getString(1))
+            assertEquals(0, cursor.getInt(6))
+            assertFalse(cursor.moveToNext())
+        }
+        migrated.query("SELECT stream_id, subscription_id, youtube_mode_mask, first_discovered_at FROM feed").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(listOf(7L, 41L, 2L, 1000L), (0..3).map(cursor::getLong))
+            assertFalse(cursor.moveToNext())
+        }
+        migrated.query("SELECT last_updated FROM feed_last_updated WHERE subscription_id = 41").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(2000L, cursor.getLong(0))
+        }
+        migrated.query("SELECT group_id, subscription_id FROM feed_group_subscription_join").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(9L, cursor.getLong(0))
+            assertEquals(41L, cursor.getLong(1))
+        }
+        migrated.execSQL("UPDATE subscriptions SET feed_muted = 1 WHERE uid = 41")
+        migrated.query("SELECT feed_muted FROM subscriptions ORDER BY uid").use { cursor ->
+            assertTrue(cursor.moveToNext())
+            assertEquals(1, cursor.getInt(0))
+            assertTrue(cursor.moveToNext())
+            assertEquals(0, cursor.getInt(0))
+        }
+        migrated.query("PRAGMA foreign_key_check").use { assertFalse(it.moveToFirst()) }
+    }
+
+    @Test
     fun migrate33to34PreservesStreamsAndHistoryWithoutGuessingUpcomingStatus() {
         testHelper.createDatabase(AppDatabase.DATABASE_NAME, Migrations.DB_VER_33).use { database ->
             for ((index, date) in listOf<Long?>(null, 0L, 4_102_444_800_000L).withIndex()) {
@@ -1461,7 +1612,9 @@ class DatabaseMigrationTest {
                 Migrations.MIGRATION_30_31,
                 Migrations.MIGRATION_31_32,
                 Migrations.MIGRATION_32_33,
-                Migrations.MIGRATION_33_34
+                Migrations.MIGRATION_33_34,
+                Migrations.MIGRATION_34_35,
+                Migrations.MIGRATION_35_36
             )
             .build()
         testHelper.closeWhenFinished(database)

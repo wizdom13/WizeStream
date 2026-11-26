@@ -24,6 +24,7 @@ import org.schabi.newpipe.error.ErrorUtil
 import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.local.feed.service.FeedLoadManager
 import org.schabi.newpipe.local.feed.service.FeedLoadService
+import org.schabi.newpipe.profiles.ProfileManager
 
 /*
  * Worker which checks for new streams of subscribed channels
@@ -37,7 +38,15 @@ class NotificationWorker(
     private val notificationHelper by lazy {
         NotificationHelper(appContext)
     }
-    private val feedLoadManager = FeedLoadManager(appContext)
+    private val profileId = ProfileManager.getActiveProfileId(appContext)
+    private val notificationPolicy = FeedNotificationPolicy(appContext, profileId)
+    private val stickySession = StickyNotificationSettings.capture(appContext, profileId)
+    private val stickyCapture = stickySession?.let { StickyNotificationCapture(appContext, it) }
+    private val feedLoadManager = FeedLoadManager(
+        appContext,
+        profileId,
+        stickyCapture?.let { it::persist }
+    )
 
     override fun createWork(): Single<Result> = if (areNotificationsEnabled(applicationContext)) {
         feedLoadManager.startLoading(
@@ -45,23 +54,32 @@ class NotificationWorker(
             groupId = FeedLoadManager.GROUP_NOTIFICATION_ENABLED
         )
             .doOnSubscribe { showLoadingFeedForegroundNotification() }
-            .map { feed ->
-                feed.mapNotNull {
-                    it.value?.let { feedUpdateInfo ->
-                        feedUpdateInfo.newStreams = NotificationKeywordFilter.filter(
-                            feedUpdateInfo.newStreams,
-                            feedUpdateInfo.notificationMode,
-                            feedUpdateInfo.notificationKeywords
-                        )
-                        feedUpdateInfo.takeIf { update -> update.newStreams.isNotEmpty() }
-                    }
-                }
-            }
             .observeOn(Schedulers.io()) // Decode notification artwork away from the UI thread.
-            .map { feedUpdateInfoList ->
-                // display notifications for each feedUpdateInfo (i.e. channel)
-                feedUpdateInfoList.forEach { feedUpdateInfo ->
-                    notificationHelper.displayNewStreamsNotifications(feedUpdateInfo)
+            .map { feed ->
+                if (stickySession != null) {
+                    // Every eligible item is already durable with its feed transaction. Rendering
+                    // is outside that transaction and never reconstructs missed alerts from cache.
+                    if (StickyNotificationSettings.isCurrent(applicationContext, stickySession)) {
+                        val channels = stickyCapture?.newlyInsertedChannels().orEmpty()
+                        StickyNotificationCoordinator.reconcile(
+                            applicationContext,
+                            silent = channels.isEmpty(),
+                            alertChannels = channels
+                        )
+                    }
+                } else if (!StickyNotificationSettings.isEnabled(applicationContext) &&
+                    profileId == ProfileManager.getActiveProfileId(applicationContext)
+                ) {
+                    // Preserve the default notification behavior, using current channel choices.
+                    feed.mapNotNull { it.value }.forEach { update ->
+                        if (notificationPolicy.prepare(update)) {
+                            notificationHelper.displayNewStreamsNotifications(update) {
+                                !StickyNotificationSettings.isEnabled(applicationContext) &&
+                                    areNotificationsEnabled(applicationContext) &&
+                                    notificationPolicy.canNotify(update.uid)
+                            }
+                        }
+                    }
                 }
                 return@map Result.success()
             }
@@ -109,6 +127,7 @@ class NotificationWorker(
          */
         @JvmStatic
         fun initialize(context: Context) {
+            StickyNotificationCoordinator.requestReconcile(context)
             if (areNotificationsEnabled(context)) {
                 schedule(context)
             } else {
