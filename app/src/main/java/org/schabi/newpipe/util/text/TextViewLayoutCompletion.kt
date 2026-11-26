@@ -16,20 +16,35 @@ object TextViewLayoutCompletion {
     @MainThread
     fun afterLayout(view: TextView, disposables: CompositeDisposable, completion: Runnable) {
         if (disposables.isDisposed) return
-        if (view.isLaidOut && !view.isLayoutRequested && hasTextLayout(view)) {
+        val ready = view.isLaidOut && !view.isLayoutRequested && hasTextLayout(view)
+        if (ready && !view.isInLayout) {
             completion.run()
             return
         }
 
         lateinit var pending: Disposable
-        val listener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            if (hasTextLayout(view) && disposables.remove(pending)) {
-                completion.run()
+        val complete = Runnable {
+            if (disposables.remove(pending)) completion.run()
+        }
+        val listener = object : View.OnLayoutChangeListener {
+            override fun onLayoutChange(v: View, l: Int, t: Int, r: Int, b: Int, oldL: Int, oldT: Int, oldR: Int, oldB: Int) {
+                if (hasTextLayout(view)) {
+                    view.removeOnLayoutChangeListener(this)
+                    // View.layout clears its layout-request flag after notifying listeners.
+                    // Let it return before the completion changes text or its maximum lines,
+                    // so the resulting request can shrink both the text and its parent row.
+                    view.post(complete)
+                }
             }
         }
-        pending = Disposable.fromAction { view.removeOnLayoutChangeListener(listener) }
-        view.addOnLayoutChangeListener(listener)
-        disposables.add(pending)
+        pending = Disposable.fromAction {
+            view.removeOnLayoutChangeListener(listener)
+            view.removeCallbacks(complete)
+        }
+        if (disposables.add(pending)) {
+            // A valid child layout can also be observed while its parent is still laying out.
+            if (ready) view.post(complete) else view.addOnLayoutChangeListener(listener)
+        }
     }
 
     private fun hasTextLayout(view: TextView): Boolean = view.width > 0 && view.layout != null
