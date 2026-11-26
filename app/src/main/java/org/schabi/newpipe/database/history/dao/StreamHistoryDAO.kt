@@ -9,6 +9,7 @@ package org.schabi.newpipe.database.history.dao
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.RewriteQueriesToDropUnusedColumns
+import androidx.room.Transaction
 import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Single
 import java.time.OffsetDateTime
@@ -17,6 +18,10 @@ import org.schabi.newpipe.database.history.model.StreamHistoryEntity
 import org.schabi.newpipe.database.history.model.StreamHistoryEntry
 import org.schabi.newpipe.database.stream.StreamStatisticsEntry
 
+/**
+ * Joined history readers use transactions so concurrent writes cannot change the rows while
+ * Room hydrates stream metadata across multiple CursorWindows.
+ */
 @Dao
 abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
 
@@ -67,15 +72,17 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
         throw UnsupportedOperationException()
     }
 
-    @get:Query(
+    @Transaction
+    @Query(
         """
         SELECT * FROM streams
         INNER JOIN stream_history ON uid = stream_id
         ORDER BY access_date DESC
         """
     )
-    abstract val history: Flowable<MutableList<StreamHistoryEntry>>
+    abstract fun getHistory(): Flowable<MutableList<StreamHistoryEntry>>
 
+    @Transaction
     @Query(
         """
         SELECT * FROM streams
@@ -86,15 +93,17 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
     )
     abstract fun getHistoryForProfile(profileId: String): Flowable<MutableList<StreamHistoryEntry>>
 
-    @get:Query(
+    @Transaction
+    @Query(
         """
         SELECT * FROM streams
         INNER JOIN stream_history ON uid = stream_id
         ORDER BY uid ASC
         """
     )
-    abstract val historySortedById: Flowable<MutableList<StreamHistoryEntry>>
+    abstract fun getHistorySortedById(): Flowable<MutableList<StreamHistoryEntry>>
 
+    @Transaction
     @Query(
         """
         SELECT * FROM streams
@@ -141,6 +150,7 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
     )
     abstract fun deleteStreamHistoryForProfile(profileId: String, streamId: Long): Int
 
+    @Transaction
     @RewriteQueriesToDropUnusedColumns
     @Query(
         """
@@ -161,6 +171,7 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
     abstract fun getStatistics(): Flowable<MutableList<StreamStatisticsEntry>>
 
     /** Keep the state index usable on older SQLite versions that cannot flatten LEFT JOIN subqueries. */
+    @Transaction
     @RewriteQueriesToDropUnusedColumns
     @Query(
         """
@@ -183,6 +194,7 @@ abstract class StreamHistoryDAO : BasicDAO<StreamHistoryEntity> {
     ): Flowable<MutableList<StreamStatisticsEntry>>
 
     /** Bound the aggregate before hydrating stream metadata and playback positions. */
+    @Transaction
     @RewriteQueriesToDropUnusedColumns
     @Query(
         """

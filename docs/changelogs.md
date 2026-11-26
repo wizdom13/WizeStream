@@ -44,6 +44,10 @@ Release history is listed newest first. The number beside each release is its An
 
 - Place Jump to date below the History filters so both filter rows can use the full screen width.
 
+### History loading
+
+- Prevent large History lists from crashing when marking a video unwatched and adding it to a playlist while the list is loading.
+
 ### Ungrouped subscriptions
 
 - Add a built-in Ungrouped entry for channels without a group, with matching feed refresh, channel navigation and filters that update as memberships change.
