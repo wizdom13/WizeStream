@@ -11,28 +11,43 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:background="?attr/colorSurface"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/playlist_sort_button"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp"
-            android:minWidth="0dp"
-            android:text="@string/playlist_sort_order"
-            android:visibility="gone"
-            app:icon="@drawable/ic_sort"
-            app:iconPadding="6dp"
-            app:iconSize="20dp"
-            tools:visibility="visible" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/playlist_sort_button"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:minWidth="0dp"
+                android:text="@string/playlist_sort_order"
+                android:visibility="gone"
+                app:icon="@drawable/ic_sort"
+                app:iconPadding="6dp"
+                app:iconSize="20dp"
+                tools:visibility="visible" />
+
+            <include
+                android:id="@+id/stream_filter_chips"
+                layout="@layout/list_stream_filter_chips"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/history_date_jump_button"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
+            android:layout_gravity="start"
+            android:layout_marginStart="4dp"
             android:minWidth="0dp"
             android:text="@string/history_jump_to_date"
             android:visibility="gone"
@@ -41,12 +56,6 @@
             app:iconSize="20dp"
             tools:visibility="visible" />
 
-        <include
-            android:id="@+id/stream_filter_chips"
-            layout="@layout/list_stream_filter_chips"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
