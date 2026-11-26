@@ -4,6 +4,7 @@ package org.schabi.newpipe.transcript
 import android.content.Context
 import androidx.core.content.FileProvider
 import androidx.test.core.app.ApplicationProvider
+import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.subjects.SingleSubject
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -75,10 +76,10 @@ class OfflineTranscriptTest {
             val subscribed = CountDownLatch(1)
             val request = TranscriptRequest(0, "https://www.youtube.com/watch?v=bbbbbbbbbbb", original)
             val result = TranscriptSourceRepository.load(context, request) {
-                subscribed.countDown()
-                pending
+                signalAfterSubscription(pending, subscribed)
             }.test()
             assertTrue(subscribed.await(5, TimeUnit.SECONDS))
+            assertTrue(pending.hasObservers())
             assertTrue(ProfileManager.setActiveProfile(context, other.id))
             pending.onSuccess(StreamInfo(0, request.url, request.url, "Old profile"))
             result.awaitDone(5, TimeUnit.SECONDS).assertNoValues().assertError(IllegalStateException::class.java)
@@ -87,10 +88,10 @@ class OfflineTranscriptTest {
             val cancelled = SingleSubject.create<StreamInfo>()
             val cancellationSubscribed = CountDownLatch(1)
             val disposed = TranscriptSourceRepository.load(context, request) {
-                cancellationSubscribed.countDown()
-                cancelled
+                signalAfterSubscription(cancelled, cancellationSubscribed)
             }.test()
             assertTrue(cancellationSubscribed.await(5, TimeUnit.SECONDS))
+            assertTrue(cancelled.hasObservers())
             disposed.dispose()
             assertFalse(cancelled.hasObservers())
             cancelled.onSuccess(StreamInfo(0, request.url, request.url, "Closed panel"))
@@ -99,5 +100,11 @@ class OfflineTranscriptTest {
             ProfileManager.setActiveProfile(context, original)
             ProfileManager.deleteProfile(context, other.id)
         }
+    }
+
+    private fun signalAfterSubscription(source: SingleSubject<StreamInfo>, subscribed: CountDownLatch): Single<StreamInfo> = Single.wrap { observer ->
+        source.subscribe(observer)
+        // The network factory runs before SingleSubject registers its observer.
+        subscribed.countDown()
     }
 }

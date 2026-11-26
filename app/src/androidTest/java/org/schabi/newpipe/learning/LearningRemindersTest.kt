@@ -21,10 +21,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.schabi.newpipe.MainActivity
 import org.schabi.newpipe.R
-import org.schabi.newpipe.database.AppDatabase
 import org.schabi.newpipe.database.learning.model.LearningContentSourceEntity
 import org.schabi.newpipe.database.learning.model.LearningSessionEntity
 import org.schabi.newpipe.database.playlist.model.PlaylistEntity
@@ -40,7 +40,11 @@ class LearningRemindersTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val prefs = PreferenceManager.getDefaultSharedPreferences(context)
     private val notifications = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    private lateinit var database: AppDatabase
+
+    @get:Rule
+    val testDatabase = TestDatabase()
+
+    private val database get() = testDatabase.database
     private lateinit var study: String
     private lateinit var other: String
     private lateinit var originalProfile: String
@@ -49,7 +53,6 @@ class LearningRemindersTest {
 
     @Before
     fun setup() {
-        database = TestDatabase.createReplacingNewPipeDatabase()
         originalProfile = ProfileManager.getActiveProfileId(context)
         originalMaster = prefs.all[context.getString(R.string.learning_mode_key)] as? Boolean
         originalTabs = prefs.getString(context.getString(R.string.saved_tabs_key), null)
@@ -84,7 +87,6 @@ class LearningRemindersTest {
             putString(context.getString(R.string.saved_tabs_key), originalTabs)
         }.commit()
         LearningReminders.initialize(context)
-        database.close()
     }
 
     @Test

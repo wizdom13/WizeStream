@@ -6,18 +6,22 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.schabi.newpipe.NewPipeDatabase
 import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.testUtil.TestDatabase
 
 @RunWith(AndroidJUnit4::class)
 class PlaylistVideoNotesTest {
+    @get:Rule
+    val testDatabase = TestDatabase()
+
     @Test
     fun existingPlaylistVideosCanHaveIndependentNotesWithoutLoadingStreamInfo() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val database = NewPipeDatabase.getInstance(context)
+        val database = testDatabase.database
         val manager = LearningNoteManager(context)
         val streams = (1..2).map {
             StreamEntity(serviceId = 0, url = "https://example.com/note-${UUID.randomUUID()}", title = "Video $it", streamType = StreamType.VIDEO_STREAM, duration = 60, uploader = "Channel")
