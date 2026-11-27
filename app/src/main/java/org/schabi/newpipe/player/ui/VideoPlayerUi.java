@@ -288,6 +288,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                         .setPackage(App.PACKAGE_NAME))
         ));
         binding.switchMute.setOnClickListener(makeOnClickListener(player::toggleMute));
+        ChannelMuteControls.bind(binding, makeOnClickListener(player::toggleMute),
+                v -> binding.fullScreenButton.performClick());
         ViewCompat.setOnApplyWindowInsetsListener(binding.itemsListPanel, (view, windowInsets) -> {
             final Insets cutout = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout());
             if (!cutout.equals(Insets.NONE)) {
@@ -356,6 +358,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.openInBrowser.setOnLongClickListener(null);
         binding.playerCloseButton.setOnClickListener(null);
         binding.switchMute.setOnClickListener(null);
+        ChannelMuteControls.bind(binding, null, null);
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.itemsListPanel, null);
 
@@ -1116,6 +1119,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private void setMuteButton(final boolean isMuted) {
         binding.switchMute.setImageDrawable(AppCompatResources.getDrawable(context, isMuted
                 ? R.drawable.ic_volume_off : R.drawable.ic_volume_up));
+        ChannelMuteControls.update(binding, isMuted, player.getHasChannelMuteIdentity());
     }
 
     private void setShuffleButton(final boolean shuffled) {

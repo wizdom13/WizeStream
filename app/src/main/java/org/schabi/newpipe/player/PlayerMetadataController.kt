@@ -59,6 +59,7 @@ internal class PlayerMetadataController(
             }
 
             tag.maybeStreamInfo.ifPresent { info ->
+                player.onChannelPlaybackMetadata(info)
                 if (Player.DEBUG) {
                     android.util.Log.d(
                         Player.TAG,

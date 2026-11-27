@@ -28,4 +28,12 @@ class PopupVideoSizingTest {
         )
         assertEquals(180, PopupVideoSizing.fit(320, 1080, 2000, 180, 16f / 9f).height)
     }
+
+    @Test
+    fun smallestPopupKeepsSeparateTouchRowsWithoutChangingItsPreferredWidth() {
+        assertEquals(PopupVideoSizing.Size(150, 96), PopupVideoSizing.fit(150, 1080, 2000, 150, 16f / 9f, 96))
+        assertEquals(PopupVideoSizing.Size(180, 101), PopupVideoSizing.fit(180, 1080, 2000, 150, 16f / 9f, 96))
+        assertEquals(PopupVideoSizing.Size(150, 267), PopupVideoSizing.fit(150, 1080, 2000, 150, 9f / 16f, 96))
+        assertTrue(PopupVideoSizing.fit(150, 150, 80, 150, 16f / 9f, 96).height <= 80)
+    }
 }

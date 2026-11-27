@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.view.LayoutInflater
+import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player as Media3Player
@@ -347,11 +348,15 @@ class Player(
 
     fun setPlayQueueForLifecycle(queue: PlayQueue) {
         activePlayQueue = queue
+        // The previous engine has been released, and the new queue has not been prepared yet.
+        audioController.beginItem(queue.item)
         queueRecovery.bind(queue)
     }
 
     fun setExoPlayerForLifecycle(exoPlayer: ExoPlayer) {
         media3Player = exoPlayer
+        // A new engine starts at full volume; restore the selected channel before preparing media.
+        applyPlayerVolume()
     }
 
     fun clearExoPlayerForLifecycle() {
@@ -485,6 +490,11 @@ class Player(
     val isMuted: Boolean
         get() = audioController.isMuted
 
+    val hasChannelMuteIdentity: Boolean
+        get() = audioController.hasChannelMuteIdentity
+
+    fun onChannelPlaybackMetadata(info: StreamInfo) = audioController.onMetadata(info)
+
     val equalizerState: EqualizerState
         get() = audioController.equalizerState
 
@@ -577,6 +587,10 @@ class Player(
     override fun onAudioSessionIdChanged(audioSessionId: Int) = media3ListenerController.onAudioSessionIdChanged(audioSessionId)
 
     override fun onMetadata(metadata: androidx.media3.common.Metadata) = historyController.onRadioMetadata(metadata)
+
+    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+        audioController.onMediaItemTransition(mediaItem)
+    }
 
     override fun onEvents(player: Media3Player, events: Media3Player.Events) {
         media3ListenerController.onEvents(player)
@@ -880,6 +894,7 @@ class Player(
 
     fun setCurrentItemForPlaybackSynchronization(item: PlayQueueItem) {
         activeItem = item
+        audioController.beginItem(item)
     }
 
     fun clearCurrentPlaybackForBlock() {

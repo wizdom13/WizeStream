@@ -32,6 +32,9 @@ internal class PlayerMedia3ListenerController(
     }
 
     fun onEvents(media3Player: Media3Player) {
+        if (player.getExoPlayer() === media3Player) {
+            audioController.onMediaItemTransition(media3Player.currentMediaItem)
+        }
         metadataController.onEvents(media3Player)
         playbackParametersController.updateLiveCatchup()
         // A seamless item transition can reuse the decoder without another size or first-frame
