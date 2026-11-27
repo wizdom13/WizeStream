@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "name": "PornHub WizeStream Plugin",
+  "plugins": [
+    {
+      "pluginId": "org.wizestream.plugin.pornhub",
+      "name": "PornHub",
+      "versionCode": 6,
+      "versionName": "1.0.5",
+      "host": "wizestream",
+      "apiVersion": "2.0",
+      "author": "WizeStream",
+      "description": "Native WizeStream service for public PornHub videos. Adults only.",
+      "minHostVersionCode": 1052002,
+      "minAndroidSdk": 24,
+      "requiredCapabilities": [],
+      "package": "pornhub-wizestream-6.ppp",
+      "sha256": "b7be7de4cf12ce09e01ecdc66a593463129fec78249e1e524841b3bc017d4470",
+      "signature": "HXoI0k5H1hfusZyzuCU0CIdh5pf9MZjavmIrJY7AFuehHbDqbp3yK2pHppSJiqZVT7w7lLcg3YNlpiRo/6HkDA==",
+      "publicKey": "5y7De9xj9hpiU/+XFqJm70eBoUPAZRaSoyvj8QBxxFY=",
+      "nsfw": true
+    }
+  ]
+}

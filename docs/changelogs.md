@@ -13,9 +13,10 @@ Release history is listed newest first. The number beside each release is its An
 
 - Keep the Customize home tab chooser open with an empty list when a search has no matches, and restore the available tabs when the query is cleared.
 
-### Plugin import errors
+### Plugins
 
 - Show complete, copyable plugin import errors in a Material 3 dialog, including package and catalog versions, checksum comparisons and metadata rejection details.
+- Fix release-only failures when native plugins load search results and video details, including existing signed plugin packages.
 
 ### Library navigation
 

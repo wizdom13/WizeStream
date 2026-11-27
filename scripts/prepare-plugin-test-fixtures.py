@@ -30,6 +30,20 @@ FIXTURES = (
         1931,
         "08c1c6ac745870031ef39014c9b3cc20b841444e24341c289b9a5932191e936c",
     ),
+    (
+        "pornhub-6.ppp",
+        "https://github.com/wizdom13/PornHub-WizeStream-Plugin/releases/download/repo/"
+        "pornhub-wizestream-6.ppp",
+        141797,
+        "b7be7de4cf12ce09e01ecdc66a593463129fec78249e1e524841b3bc017d4470",
+    ),
+    (
+        "pornhub-6-LICENSE.txt",
+        "https://raw.githubusercontent.com/wizdom13/PornHub-WizeStream-Plugin/"
+        "cc182d0a451fb60024625b0aa068816a9303e89d/LICENSE",
+        35149,
+        "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    ),
 )
 
 

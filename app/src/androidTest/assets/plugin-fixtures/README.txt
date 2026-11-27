@@ -29,3 +29,25 @@ This is an unmodified published package: compatibility tests must not repair or
 replace its DEX. The publisher repository provides version 1.2.1, including its
 Android 7 URL-encoding fix. The community catalog still listed older version 1.2.0
 when this fixture was recorded; the publisher signing key is unchanged.
+
+Native WizeStream API 2.0 compatibility fixture
+
+Plugin: PornHub 1.0.5, version code 6, by WizeStream
+Package source:
+https://github.com/wizdom13/PornHub-WizeStream-Plugin/releases/download/repo/pornhub-wizestream-6.ppp
+Package SHA-256:
+b7be7de4cf12ce09e01ecdc66a593463129fec78249e1e524841b3bc017d4470
+Package size: 141797 bytes
+Source revision:
+https://github.com/wizdom13/PornHub-WizeStream-Plugin/tree/cc182d0a451fb60024625b0aa068816a9303e89d
+License: GPL-3.0-or-later; the preparation script includes the source LICENSE.
+The catalog signature/key were recorded from the publisher's repo/index.json.
+
+This package is included only in generated instrumentation test assets, never in
+the production application. Its original signed DEX exercises real native
+interface defaults, shared Kotlin/jsoup/nanojson dependencies, date/time APIs and
+async downloader callbacks against the minified host. The checked-in HTML is
+synthetic non-explicit metadata and uses reserved example.com media URLs. The
+provider deliberately rejects .invalid hostnames, so those are not valid fixtures.
+All extraction requests are answered offline; the test never fetches or renders
+provider content. Package signatures are verified without rewriting the bytes.
