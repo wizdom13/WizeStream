@@ -11,7 +11,6 @@ import androidx.collection.SparseArrayCompat
 import java.util.ArrayList
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.stream.AudioStream
-import org.schabi.newpipe.extractor.stream.DeliveryMethod.PROGRESSIVE_HTTP
 import org.schabi.newpipe.extractor.stream.Stream
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.SubtitlesStream
@@ -35,27 +34,21 @@ internal data class DownloadStreamCatalog(
 internal object DownloadStreamCatalogFactory {
     @JvmStatic
     fun create(context: Context, info: StreamInfo): DownloadStreamCatalog {
-        val audioStreams = ListHelper.getStreamsOfSpecifiedDelivery(
-            info.audioStreams,
-            PROGRESSIVE_HTTP
-        )
+        val audioStreams = info.audioStreams.filter(DownloadSourcePolicy::isProgressive)
         val groupedAudioStreams = ArrayList(
             ListHelper.getGroupedAudioStreams(context, audioStreams)
         )
 
-        // TODO: Adapt this when the downloader supports other stream delivery methods.
+        val hlsFallback = DownloadSourcePolicy.hlsVideoFallback(info)
         val videoStreams = ListHelper.getSortedStreamVideosList(
             context,
-            ListHelper.getStreamsOfSpecifiedDelivery(info.videoStreams, PROGRESSIVE_HTTP),
-            ListHelper.getStreamsOfSpecifiedDelivery(info.videoOnlyStreams, PROGRESSIVE_HTTP),
+            info.videoStreams.filter(DownloadSourcePolicy::isProgressive).ifEmpty { hlsFallback },
+            info.videoOnlyStreams.filter(DownloadSourcePolicy::isProgressive),
             false,
             // Prefer video-only streams when multiple languages allow explicit audio selection.
             groupedAudioStreams.size > 1
         )
-        val subtitleStreams = ListHelper.getStreamsOfSpecifiedDelivery(
-            info.subtitles,
-            PROGRESSIVE_HTTP
-        )
+        val subtitleStreams = info.subtitles.filter(DownloadSourcePolicy::isProgressive)
 
         val fallbackIndex = addMuxedAudioFallback(groupedAudioStreams, videoStreams)
         return buildCatalog(
@@ -181,7 +174,7 @@ internal object DownloadStreamAdapterFactory {
 
         return DownloadStreamAdapters(
             audioStreams = StreamItemAdapter(audioStreams),
-            videoStreams = StreamItemAdapter(videoStreams, secondaryStreams)
+            videoStreams = DownloadVideoStreamAdapter(videoStreams, secondaryStreams)
         )
     }
 

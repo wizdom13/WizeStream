@@ -34,12 +34,16 @@ public abstract class Postprocessing implements Serializable {
     public transient static final String ALGORITHM_OGG_FROM_WEBM_DEMUXER = "webm-ogg-d";
     public transient static final String ALGORITHM_MP3_FROM_AUDIO = "audio-mp3";
     public transient static final String ALGORITHM_SEGMENTS = "selected-segments";
+    public transient static final String ALGORITHM_HLS_TO_MP4 = "hls-mp4";
 
     public static Postprocessing getAlgorithm(@NonNull String algorithmName, String[] args,
                                               StreamInfo streamInfo) {
         Postprocessing instance;
 
         switch (algorithmName) {
+            case ALGORITHM_HLS_TO_MP4:
+                instance = new HlsToMp4Postprocessing();
+                break;
             case ALGORITHM_SEGMENTS:
                 instance = new SegmentPostprocessing();
                 break;

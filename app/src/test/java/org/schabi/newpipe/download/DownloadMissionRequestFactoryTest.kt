@@ -7,11 +7,13 @@ package org.schabi.newpipe.download
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.DeliveryMethod.DASH
+import org.schabi.newpipe.extractor.stream.DeliveryMethod.HLS
 import org.schabi.newpipe.extractor.stream.DeliveryMethod.PROGRESSIVE_HTTP
 import org.schabi.newpipe.extractor.stream.Stream
 import org.schabi.newpipe.extractor.stream.SubtitlesStream
@@ -133,6 +135,48 @@ class DownloadMissionRequestFactoryTest {
                 secondarySize = 200,
                 threads = 3
             )
+        }
+    }
+
+    @Test
+    fun `HLS video uses dedicated transport with saved quality and header snapshot`() {
+        val hls = VideoStream.Builder()
+            .setId("hls")
+            .setContent("https://example.com/master.m3u8?token=fixture", true)
+            .setMediaFormat(MediaFormat.MPEG_4)
+            .setDeliveryMethod(HLS)
+            .setResolution("720p")
+            .setIsVideoOnly(false)
+            .setRequestHeaders(mapOf("Referer" to "https://example.com/watch"))
+            .build()
+        val request = DownloadMissionRequestFactory.forVideo(hls, null, 1234, 0, 16)
+        hls.requestHeaders = emptyMap()
+        assertEquals(Postprocessing.ALGORITHM_HLS_TO_MP4, request.postprocessingName)
+        assertArrayEquals(arrayOf("https://example.com/master.m3u8?token=fixture"), request.urls)
+        assertEquals(1, request.threads)
+        assertEquals('v', request.kind)
+        assertEquals(0, request.nearLength)
+        assertNull(request.postprocessingArguments)
+        assertEquals("720p", request.recoveryInfo.single().desired)
+        assertEquals("https://example.com/watch", request.requestHeaders!!.single()["Referer"])
+        assertEquals(HLS, hls.deliveryMethod)
+    }
+
+    @Test
+    fun `adaptive audio and unsupported primary video cannot enter ordinary downloader`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            DownloadMissionRequestFactory.forAudio(audio(MediaFormat.M4A, "audio", HLS), null, false, 192, 2)
+        }
+        val dash = VideoStream.Builder()
+            .setId("dash")
+            .setContent("https://example.com/video.mpd", true)
+            .setMediaFormat(MediaFormat.MPEG_4)
+            .setDeliveryMethod(DASH)
+            .setResolution("720p")
+            .setIsVideoOnly(false)
+            .build()
+        assertThrows(IllegalArgumentException::class.java) {
+            DownloadMissionRequestFactory.forVideo(dash, null, 0, 0, 2)
         }
     }
 

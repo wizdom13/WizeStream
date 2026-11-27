@@ -235,7 +235,13 @@ internal class DownloadOptionsController(
     }
 
     fun updateVideoAudioTrackVisibility(selectedVideoIndex: Int) {
-        val isVideoOnly = videoStreamsAdapter.getItem(selectedVideoIndex).isVideoOnly
+        val stream = videoStreamsAdapter.getItem(selectedVideoIndex)
+        if (DownloadSourcePolicy.isHlsVideo(stream)) {
+            binding.audioTrackSpinner.visibility = View.GONE
+            binding.audioTrackPresentInVideoText.visibility = View.GONE
+            return
+        }
+        val isVideoOnly = stream.isVideoOnly
         binding.audioTrackPresentInVideoText.setText(R.string.audio_track_present_in_video)
         binding.audioTrackSpinner.visibility = visibility(isVideoOnly && audioTracks.size() > 1)
         binding.audioTrackPresentInVideoText.visibility =

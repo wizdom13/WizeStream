@@ -71,6 +71,13 @@ internal object DownloadOutputPlanFactory {
     }
 
     @JvmStatic
+    fun forHlsVideo(baseFilename: String): DownloadOutputPlan = DownloadOutputPlan(
+        filename = appendSuffix(baseFilename, MediaFormat.MPEG_4.getSuffix()),
+        mimeType = MediaFormat.MPEG_4.mimeType,
+        estimatedSize = 0
+    )
+
+    @JvmStatic
     fun forSubtitle(
         baseFilename: String,
         format: MediaFormat?,
