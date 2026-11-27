@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="channel_feed_refresh_title">Refresh channel feed</string>
+    <string name="channel_feed_refresh_running">Refreshing channel feed…</string>
+    <string name="channel_feed_refresh_complete">Channel feed refreshed.</string>
+    <string name="channel_feed_refresh_partial">Channel feed updated, but some items could not be fetched.</string>
+    <string name="channel_feed_refresh_failed">Could not refresh this channel’s feed.</string>
+    <string name="channel_feed_refresh_unavailable">Channel subscription changed. Please refresh again.</string>
+</resources>

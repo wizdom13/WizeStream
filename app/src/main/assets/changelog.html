@@ -130,6 +130,11 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <section id="unreleased">
 <h2>Unreleased</h2>
 <div class="release-notes">
+<h3>Single-channel feed refresh</h3>
+<ul>
+<li>Add Refresh channel feed to subscribed channels&#x27; menus to fetch their saved feed immediately, including muted channels, while keeping the mute setting enabled for regular updates.</li>
+<li>Refresh only the selected channel in its original profile, respecting its saved YouTube modes and feed tab settings. Keep refresh progress across screen recreation and prevent duplicate channel requests.</li>
+</ul>
 <h3>Home tab chooser</h3>
 <ul>
 <li>Keep the Customize home tab chooser open with an empty list when a search has no matches, and restore the available tabs when the query is cleared.</li>

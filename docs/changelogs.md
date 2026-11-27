@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Single-channel feed refresh
+
+- Add Refresh channel feed to subscribed channels' menus to fetch their saved feed immediately, including muted channels, while keeping the mute setting enabled for regular updates.
+- Refresh only the selected channel in its original profile, respecting its saved YouTube modes and feed tab settings. Keep refresh progress across screen recreation and prevent duplicate channel requests.
+
 ### Home tab chooser
 
 - Keep the Customize home tab chooser open with an empty list when a search has no matches, and restore the available tabs when the query is cleared.
