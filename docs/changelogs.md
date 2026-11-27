@@ -25,6 +25,12 @@ Release history is listed newest first. The number beside each release is its An
 
 - Remove obsolete in-app update APKs in the background after a grace period, while keeping newer pending updates and files needed by active downloads or the Android installer.
 
+### Live chat controls
+
+- Hide the live-chat controls when scrolling messages up and reveal them when scrolling down, using the same behavior as What's New. Incoming messages keep the controls in place.
+- Use compact Material 3 recording and menu actions with space between controls and the screen edges. Show Retry only after a connection failure, and keep Saved chat and danmaku available from the menu.
+- Keep the newest messages visible above the bottom navigation while the video header is expanded.
+
 ## WizeStream 1.53.0 (`1053000`)
 
 ### Retained subscription alerts

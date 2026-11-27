@@ -5,8 +5,10 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import java.io.File
@@ -33,6 +35,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
+import org.robolectric.shadows.ShadowPopupMenu
 import org.schabi.newpipe.R
 import org.schabi.newpipe.extractor.bulletComments.BulletCommentsInfoItem
 import org.schabi.newpipe.local.history.IncognitoMode
@@ -82,6 +85,9 @@ class LiveChatRecordingControlsTest {
         capture().performClick()
         idle()
         assertButton(R.string.live_chat_capture_stop)
+        val recordingStatus = fragment.requireView().findViewById<TextView>(R.id.liveChatRecordingStatus)
+        assertEquals(View.VISIBLE, recordingStatus.visibility)
+        assertEquals(context.getString(R.string.live_chat_recording_active), recordingStatus.text)
         send("first")
 
         val oldButton = capture()
@@ -94,12 +100,16 @@ class LiveChatRecordingControlsTest {
         idle()
         gate.complete(Unit)
         idle()
-        assertEquals(context.getString(R.string.live_chat_capture_saving), oldButton.text.toString())
+        assertEquals(context.getString(R.string.live_chat_capture_saving), oldButton.contentDescription.toString())
 
         manager.beginTransaction().attach(fragment).commitNow()
         idle()
         assertButton(R.string.live_chat_capture_resume)
-        assertEquals(context.getString(R.string.live_chat_saved_badge), fragment.requireView().findViewById<Button>(R.id.liveChatSaved).text.toString())
+        assertEquals(View.GONE, fragment.requireView().findViewById<View>(R.id.liveChatRecordingStatus).visibility)
+        fragment.requireView().findViewById<View>(R.id.liveChatMore).performClick()
+        val popup = ShadowPopupMenu.getLatestPopupMenu()
+        assertEquals(context.getString(R.string.live_chat_saved_badge), popup.menu.findItem(R.id.liveChatSaved).title)
+        popup.dismiss()
         assertEquals(1, sourceStarts)
         capture().performClick()
         idle()
@@ -186,7 +196,7 @@ class LiveChatRecordingControlsTest {
     private fun capture(): Button = fragment.requireView().findViewById(R.id.liveChatCapture)
 
     private fun assertButton(label: Int, enabled: Boolean = true) {
-        assertEquals(context.getString(label), capture().text.toString())
+        assertEquals(context.getString(label), capture().contentDescription.toString())
         assertEquals(enabled, capture().isEnabled)
     }
 
