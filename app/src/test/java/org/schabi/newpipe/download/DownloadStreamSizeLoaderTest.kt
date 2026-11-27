@@ -11,7 +11,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.stream.AudioStream
+import org.schabi.newpipe.extractor.stream.DeliveryMethod
 import org.schabi.newpipe.extractor.stream.SubtitlesStream
 import org.schabi.newpipe.extractor.stream.VideoStream
 import org.schabi.newpipe.util.StreamItemAdapter.StreamInfoWrapper
@@ -87,6 +89,42 @@ internal class DownloadStreamSizeLoaderTest {
 
         assertTrue(loaded.isEmpty())
     }
+
+    @Test
+    fun `HLS manifests are excluded from HEAD metadata probing`() {
+        val hls = video(DeliveryMethod.HLS)
+        val progressive = video(DeliveryMethod.PROGRESSIVE_HTTP)
+        val video = StreamInfoWrapper(listOf(hls, progressive), null)
+        val requested = mutableListOf<String>()
+        val loader = DownloadStreamSizeLoader(
+            video,
+            DownloadAudioStreamsProvider { StreamInfoWrapper.empty() },
+            StreamInfoWrapper.empty(),
+            DownloadStreamSizeLoadedListener { },
+            DownloadStreamSizeErrorListener { _, _ -> },
+            DownloadStreamInfoFetcher { wrapper ->
+                requested += wrapper.streamsList.map { it.content }
+                @Suppress("UNCHECKED_CAST")
+                (wrapper as StreamInfoWrapper<org.schabi.newpipe.extractor.stream.Stream>).apply {
+                    streamsList.forEach { setSize(it, 10_000) }
+                }
+                Single.just(true)
+            }
+        )
+        loader.refresh()
+        assertEquals(listOf(progressive.content), requested)
+        assertEquals(10_000, video.getSizeInBytes(progressive))
+        assertTrue(video.getSizeInBytes(hls) < 0)
+    }
+
+    private fun video(delivery: DeliveryMethod): VideoStream = VideoStream.Builder()
+        .setId(delivery.name)
+        .setContent("https://example.org/${delivery.name}", true)
+        .setMediaFormat(MediaFormat.MPEG_4)
+        .setDeliveryMethod(delivery)
+        .setResolution("720p")
+        .setIsVideoOnly(false)
+        .build()
 
     private fun loader(
         audioProvider: DownloadAudioStreamsProvider = DownloadAudioStreamsProvider {

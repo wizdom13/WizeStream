@@ -372,6 +372,7 @@ class DownloadDialog() :
             selectedSubtitleIndex,
             selectedAudioOutputIndex
         )
+        updateSegmentSelection()
     }
 
     private fun onStreamSizeLoadError(option: DownloadMediaOption, throwable: Throwable) {
@@ -396,6 +397,7 @@ class DownloadDialog() :
 
     private fun onVideoStreamSelected() {
         newOptionsController().updateVideoAudioTrackVisibility(selectedVideoIndex)
+        updateSegmentSelection()
     }
 
     private fun setupSubtitleSpinner() {
@@ -453,7 +455,7 @@ class DownloadDialog() :
     private fun updateCompanionCaption() {
         if (_dialogBinding == null) return
         val supported = dialogBinding.videoAudioGroup.checkedRadioButtonId == R.id.video_button &&
-            subtitleStreamsAdapter.getAll().isNotEmpty() && selectedSegments.isEmpty()
+            subtitleStreamsAdapter.getAll().isNotEmpty() && selectedSegments.isEmpty() && !isHlsVideoSelected()
         dialogBinding.companionCaption.visibility = if (supported) View.VISIBLE else View.GONE
         val selected = subtitleStreamsAdapter.getAll().getOrNull(companionCaptionIndex)
         dialogBinding.companionCaption.text = getString(R.string.companion_caption_label, selected?.displayLanguageName ?: getString(R.string.companion_caption_off))
@@ -461,12 +463,24 @@ class DownloadDialog() :
 
     private fun updateSegmentSelection() {
         if (_dialogBinding == null) return
-        val supported = streamInfo.duration > 0 && !org.schabi.newpipe.util.StreamTypeUtil.isLiveStream(streamInfo.streamType) && dialogBinding.videoAudioGroup.checkedRadioButtonId != R.id.subtitle_button
+        val hlsSelected = isHlsVideoSelected()
+        if (hlsSelected) {
+            selectedSegments = ""
+            companionCaptionIndex = -1
+        }
+        val supported = !hlsSelected && streamInfo.duration > 0 && !org.schabi.newpipe.util.StreamTypeUtil.isLiveStream(streamInfo.streamType) && dialogBinding.videoAudioGroup.checkedRadioButtonId != R.id.subtitle_button
         updateCompanionCaption()
         dialogBinding.downloadSegments.isEnabled = supported
+        dialogBinding.downloadSegments.visibility = if (hlsSelected) View.GONE else View.VISIBLE
         dialogBinding.downloadSegments.text = if (selectedSegments.isEmpty()) getString(R.string.download_segments) else getString(R.string.download_segments_selected, DownloadSegments.decode(selectedSegments).size)
-        dialogBinding.audioOutputFormatSpinner.isEnabled = selectedSegments.isEmpty() || !supported
+        dialogBinding.audioOutputFormatSpinner.isEnabled = !hlsSelected && (selectedSegments.isEmpty() || !supported)
+        dialogBinding.threadsLayout.visibility = if (hlsSelected) View.GONE else View.VISIBLE
+        dialogBinding.threadsTextView.visibility = if (hlsSelected) View.GONE else View.VISIBLE
+        dialogBinding.threads.isEnabled = !hlsSelected && dialogBinding.videoAudioGroup.checkedRadioButtonId != R.id.subtitle_button
     }
+
+    private fun isHlsVideoSelected(): Boolean = _dialogBinding?.videoAudioGroup?.checkedRadioButtonId == R.id.video_button &&
+        videoStreams.streamsList.getOrNull(selectedVideoIndex)?.let(DownloadSourcePolicy::isHlsVideo) == true
 
     override fun onItemSelected(
         parent: AdapterView<*>,
@@ -567,6 +581,13 @@ class DownloadDialog() :
         if (_dialogBinding == null) {
             return
         }
+        if (isHlsVideoSelected()) {
+            dialogBinding.audioOutputFormatLabel.visibility = View.GONE
+            dialogBinding.audioOutputFormatSpinner.visibility = View.GONE
+            dialogBinding.mp3BitrateLabel.visibility = View.GONE
+            dialogBinding.mp3BitrateSpinner.visibility = View.GONE
+            return
+        }
         newOptionsController().updateMp3BitrateVisibility(
             selectedAudioOutputIndex,
             selectedAudioIndex
@@ -574,7 +595,7 @@ class DownloadDialog() :
     }
 
     private fun isMp3OutputSelected(): Boolean {
-        return selectedSegments.isEmpty() && DownloadAudioOutputPolicy.isMp3Output(selectedAudioOutputIndex)
+        return !isHlsVideoSelected() && selectedSegments.isEmpty() && DownloadAudioOutputPolicy.isMp3Output(selectedAudioOutputIndex)
     }
 
     private fun getSelectedMp3Bitrate(): Int {
@@ -667,11 +688,15 @@ class DownloadDialog() :
             R.id.video_button -> {
                 selectedMediaType = getString(R.string.last_download_type_video_key)
                 mainStorage = mainStorageVideo
-                outputPlan = DownloadOutputPlanFactory.forVideo(
-                    baseFilename,
-                    videoStreamsAdapter.getItem(selectedVideoIndex).format,
-                    videoStreams.getSizeInBytes(selectedVideoIndex)
-                )
+                outputPlan = if (isHlsVideoSelected()) {
+                    DownloadOutputPlanFactory.forHlsVideo(baseFilename)
+                } else {
+                    DownloadOutputPlanFactory.forVideo(
+                        baseFilename,
+                        videoStreamsAdapter.getItem(selectedVideoIndex).format,
+                        videoStreams.getSizeInBytes(selectedVideoIndex)
+                    )
+                }
             }
 
             R.id.subtitle_button -> {
@@ -687,7 +712,7 @@ class DownloadDialog() :
             else -> error("No stream selected")
         }
 
-        if (selectedSegments.isNotEmpty() && checkedButton != R.id.subtitle_button) {
+        if (!isHlsVideoSelected() && selectedSegments.isNotEmpty() && checkedButton != R.id.subtitle_button) {
             val audio = checkedButton == R.id.audio_button
             outputPlan = DownloadOutputPlan(
                 "${baseFilename}_segments.${if (audio) "m4a" else "mp4"}",
@@ -775,7 +800,9 @@ class DownloadDialog() :
             else -> return
         }
 
-        val companion = if (request.kind == 'v' && selectedSegments.isEmpty() && companionCaptionIndex >= 0) {
+        val hlsSelected = request.postprocessingName == Postprocessing.ALGORITHM_HLS_TO_MP4
+        val selectedRanges = if (hlsSelected) "" else selectedSegments
+        val companion = if (!hlsSelected && request.kind == 'v' && selectedRanges.isEmpty() && companionCaptionIndex >= 0) {
             try {
                 CompanionCaption.prepare(
                     dialogContext,
@@ -810,8 +837,8 @@ class DownloadDialog() :
             request.kind,
             request.threads,
             streamInfo,
-            if (selectedSegments.isNotEmpty() && request.kind != 's') Postprocessing.ALGORITHM_SEGMENTS else request.postprocessingName,
-            if (selectedSegments.isNotEmpty() && request.kind != 's') arrayOf(selectedSegments, request.postprocessingName.orEmpty()) + request.postprocessingArguments.orEmpty() else request.postprocessingArguments,
+            if (selectedRanges.isNotEmpty() && request.kind != 's') Postprocessing.ALGORITHM_SEGMENTS else request.postprocessingName,
+            if (selectedRanges.isNotEmpty() && request.kind != 's') arrayOf(selectedRanges, request.postprocessingName.orEmpty()) + request.postprocessingArguments.orEmpty() else request.postprocessingArguments,
             request.nearLength,
             request.recoveryInfo,
             null,

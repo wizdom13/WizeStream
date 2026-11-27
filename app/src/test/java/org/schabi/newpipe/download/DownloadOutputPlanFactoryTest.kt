@@ -91,6 +91,14 @@ internal class DownloadOutputPlanFactoryTest {
     }
 
     @Test
+    fun `HLS video output is MP4 with unknown media size`() {
+        val plan = DownloadOutputPlanFactory.forHlsVideo("video")
+        assertEquals("video.mp4", plan.filename)
+        assertEquals(MediaFormat.MPEG_4.mimeType, plan.mimeType)
+        assertEquals(0, plan.estimatedSize)
+    }
+
+    @Test
     fun `TTML subtitle is saved with SRT suffix`() {
         val plan = DownloadOutputPlanFactory.forSubtitle(
             baseFilename = "captions-en",

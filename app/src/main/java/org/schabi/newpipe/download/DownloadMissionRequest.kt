@@ -36,6 +36,7 @@ internal object DownloadMissionRequestFactory {
         mp3BitrateKbps: Int,
         threads: Int
     ): DownloadMissionRequest {
+        require(DownloadSourcePolicy.isProgressive(selectedStream)) { "Unsupported audio delivery format" }
         val postprocessingName: String?
         val postprocessingArguments: Array<String>?
         when {
@@ -86,6 +87,20 @@ internal object DownloadMissionRequestFactory {
         secondarySize: Long,
         threads: Int
     ): DownloadMissionRequest {
+        if (DownloadSourcePolicy.isHlsVideo(selectedStream)) {
+            require(secondaryStream == null) { "Separate audio is not supported for HLS downloads" }
+            return DownloadMissionRequest(
+                urls = arrayOf(selectedStream.content),
+                kind = 'v',
+                threads = 1,
+                postprocessingName = Postprocessing.ALGORITHM_HLS_TO_MP4,
+                postprocessingArguments = null,
+                nearLength = 0,
+                recoveryInfo = arrayListOf(MissionRecoveryInfo(selectedStream)),
+                requestHeaders = DownloadRequestHeaders.capture(selectedStream)
+            )
+        }
+        require(DownloadSourcePolicy.isProgressive(selectedStream)) { "Unsupported video delivery format" }
         if (secondaryStream == null) {
             return singleStreamRequest(
                 selectedStream = selectedStream,
@@ -125,6 +140,7 @@ internal object DownloadMissionRequestFactory {
 
     @JvmStatic
     fun forSubtitle(selectedStream: SubtitlesStream): DownloadMissionRequest {
+        require(DownloadSourcePolicy.isProgressive(selectedStream)) { "Unsupported subtitle delivery format" }
         val format = selectedStream.format
         val postprocessingName = if (format == MediaFormat.TTML) {
             Postprocessing.ALGORITHM_TTML_CONVERTER

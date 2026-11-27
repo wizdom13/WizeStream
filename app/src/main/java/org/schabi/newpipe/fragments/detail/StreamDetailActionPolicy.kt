@@ -1,9 +1,8 @@
 package org.schabi.newpipe.fragments.detail
 
-import org.schabi.newpipe.extractor.stream.DeliveryMethod
+import org.schabi.newpipe.download.DownloadSourcePolicy
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamType
-import org.schabi.newpipe.util.StreamTypeUtil
 
 /** Resolve detail controls from playable sources, not only extractor stream-list counts. */
 object StreamDetailActionPolicy {
@@ -29,18 +28,6 @@ object StreamDetailActionPolicy {
         val backgroundPlayback = info.audioStreams.isNotEmpty() ||
             info.videoStreams.isNotEmpty() || manifestPlayback
 
-        // DownloadStreamCatalogFactory only offers progressive HTTP files, not playback-only
-        // HLS/DASH manifests. Avoid showing a Download button that opens an empty dialog.
-        val directDownload = !StreamTypeUtil.isLiveStream(info.streamType) &&
-            sequenceOf(
-                info.audioStreams,
-                info.videoStreams,
-                info.videoOnlyStreams,
-                info.subtitles
-            ).flatten().any {
-                it.isUrl && it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP
-            }
-
-        return Actions(directDownload, backgroundPlayback, videoPlayback)
+        return Actions(DownloadSourcePolicy.hasDownload(info), backgroundPlayback, videoPlayback)
     }
 }

@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Objects;
 
 import us.shandian.giga.get.DownloadMission;
+import us.shandian.giga.get.HlsDownloadMission;
 import us.shandian.giga.get.MissionRecoveryInfo;
 import us.shandian.giga.postprocessing.Postprocessing;
 import us.shandian.giga.service.DownloadManager.NetworkState;
@@ -454,7 +455,9 @@ public class DownloadManagerService extends Service {
         else
             ps = Postprocessing.getAlgorithm(psName, psArgs, streamInfo);
 
-        final DownloadMission mission = new DownloadMission(urls, storage, kind, ps);
+        final DownloadMission mission = Postprocessing.ALGORITHM_HLS_TO_MP4.equals(psName)
+                ? new HlsDownloadMission(urls, storage, kind, ps)
+                : new DownloadMission(urls, storage, kind, ps);
         mission.artworkRequest = org.schabi.newpipe.download.artwork.DownloadArtworkRequest.create(
                 this, kind, storage.getName(), streamInfo);
         if (intent.getBooleanExtra("automatic_download", false)

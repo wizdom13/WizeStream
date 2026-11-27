@@ -55,10 +55,29 @@ internal class DownloadStreamSizeLoader @JvmOverloads constructor(
         option: DownloadMediaOption,
         streams: StreamInfoWrapper<T>
     ) {
+        val progressive = streams.streamsList.filter(DownloadSourcePolicy::isProgressive)
+        val requestedStreams = if (progressive.size == streams.streamsList.size) {
+            streams
+        } else {
+            // A manifest's Content-Length is only playlist text, never the media's download size.
+            if (progressive.isEmpty()) {
+                loadedListener.onLoaded(option)
+                return
+            }
+            StreamInfoWrapper(progressive, null)
+        }
         disposables.add(
-            fetcher.fetch(streams)
+            fetcher.fetch(requestedStreams)
                 .subscribe(
-                    { loadedListener.onLoaded(option) },
+                    {
+                        if (requestedStreams !== streams) {
+                            progressive.forEachIndexed { index, stream ->
+                                streams.setSize(stream, requestedStreams.getSizeInBytes(index))
+                                streams.setFormat(stream, requestedStreams.getFormat(index))
+                            }
+                        }
+                        loadedListener.onLoaded(option)
+                    },
                     { errorListener.onError(option, it) }
                 )
         )
