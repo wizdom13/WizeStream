@@ -237,6 +237,7 @@ Its core fields are:
   "versionName": "1.0.0",
   "host": "wizestream",
   "apiVersion": "2.0",
+  "icon": "icon.png",
   "minHostVersionCode": 1052000,
   "minAndroidSdk": 24,
   "requiredCapabilities": ["profile-preferences"],
@@ -283,8 +284,35 @@ settings and credentials; the host binds it to that profile.
 
 String and Boolean settings declared in `plugin.json` are rendered by the host. The context
 exposes their defaults and a change-listener interface. The settings screen also offers a restart
-because some implementations cache their configuration. Optional icons are supported. Theme
-color metadata is parsed, but this host retains WizeStream's own application theme.
+because some implementations cache their configuration. Theme color metadata is parsed, but this
+host retains WizeStream's own application theme.
+
+### Service icons
+
+A plugin can supply its service icon through the existing manifest field:
+
+```json
+"icon": "icon.png"
+```
+
+Place that image at `src/main/resources/icon.png`, or use another package-relative
+resource path and declare the same path in the manifest. The native template includes
+an editable example vector and a 256 × 256 PNG. Replace the example with a
+**single-color image on a transparent background**. The service selector tints its
+icons, so an opaque background would hide the artwork under that tint.
+
+The encoded image must be no larger than **256 KiB**, with width and height each at
+most **512 pixels**. PNG is recommended. The template's `pluginPackage` task checks
+that the declared raster exists in the final archive, fits these limits, and decodes
+successfully. An omitted or unusable icon falls back to the generic plugin symbol
+without preventing an otherwise valid service from loading.
+
+WizeStream reads the image from the verified signed package and uses it in service
+selection, the selected-service header, and relevant service pickers. No icon
+download or additional plugin API is needed. Installation or update still requires a
+restart before the new service artwork appears. Treat an icon change like any other
+published package update: retain the plugin ID and signing key, increase `versionCode`,
+and publish the matching signed package and catalog together.
 
 ### Shared libraries and packaging
 

@@ -55,6 +55,25 @@ Set `ANDROID_HOME`, or put `sdk.dir=/absolute/path/android-sdk` in a local, untr
 Use `-PpluginSigningKey=/private/path/key.pk8` and
 `-PpluginPublicKey=/private/path/public.der` if keys are stored elsewhere.
 
+## Give the service its own icon
+
+Replace `src/main/resources/icon.png` with your service's **square, single-color PNG
+on a transparent background**. The sample is 256 × 256; the host accepts at most
+512 × 512 pixels and 256 KiB. Do not add an opaque background: the service selector
+tints the image for the active theme. The editable sample is
+[`artwork/service-icon.svg`](artwork/service-icon.svg); rendering instructions are in
+[artwork/README.md](artwork/README.md).
+
+Keep `"icon": "icon.png"` in `plugin.json`, or update it to the exact package-relative
+path under `src/main/resources`. `pluginPackage` checks the final archive for the
+declared image, validates its encoded size and dimensions, and decodes it before the
+package can be signed. No new host API or remote icon URL is required. A missing icon
+uses WizeStream's generic plugin symbol.
+
+After installation or update, restart WizeStream to load the new icon. Preserve the
+plugin ID and signing key, and increase `versionCode` when changing artwork in an
+already published plugin.
+
 ## Replace the sample
 
 1. Choose a permanent, unique `pluginId` and a service name that WizeStream does not already provide.

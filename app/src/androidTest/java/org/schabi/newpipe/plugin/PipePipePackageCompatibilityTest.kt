@@ -7,6 +7,8 @@ package org.schabi.newpipe.plugin
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.os.Parcel
 import androidx.preference.PreferenceManager
@@ -361,6 +363,13 @@ class PipePipePackageCompatibilityTest {
         }
         assertEquals("wizestream", fixture.manifest.host)
         assertEquals("2.0", fixture.manifest.apiVersion)
+        assertEquals("icon.png", fixture.manifest.icon)
+        val encodedIcon = requireNotNull(PluginPackage.readIcon(fixture.file, fixture.manifest))
+        val expectedIcon = requireNotNull(BitmapFactory.decodeByteArray(encodedIcon, 0, encodedIcon.size))
+        val loadedIcon = PluginManager.getIcon(context, fixture.service.serviceId) as BitmapDrawable
+        assertEquals(256, loadedIcon.bitmap.width)
+        assertEquals(256, loadedIcon.bitmap.height)
+        assertTrue("The native service uses its signed package artwork", expectedIcon.sameAs(loadedIcon.bitmap))
         assertEquals(1_772_767_428, fixture.service.serviceId)
         assertEquals("https://example.invalid/profile-fixture", fixture.service.baseUrl)
         assertEquals(profile.id, fixture.service.javaClass.getMethod("getBoundProfileId").invoke(fixture.service))

@@ -18,6 +18,7 @@ import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 import java.util.Properties
 import java.util.zip.ZipFile
+import javax.imageio.ImageIO
 
 plugins {
     `java-library`
@@ -153,6 +154,30 @@ val pluginPackage by tasks.registering(Zip::class) {
     doLast {
         ZipFile(archiveFile.get().asFile).use { zip ->
             check(zip.getEntry("plugin.json") != null && zip.getEntry("classes.dex") != null)
+            (pluginManifest["icon"] as? String)?.let { iconPath ->
+                val iconEntry = checkNotNull(zip.getEntry(iconPath)) {
+                    "Plugin package is missing its declared icon: $iconPath"
+                }
+                check(iconEntry.size in 1..(256L * 1024L)) {
+                    "Plugin icon must be at most 256 KiB"
+                }
+                zip.getInputStream(iconEntry).use { source ->
+                    ImageIO.createImageInputStream(source).use { imageInput ->
+                        val readers = ImageIO.getImageReaders(imageInput)
+                        check(readers.hasNext()) { "Plugin icon must be a decodable raster; use PNG" }
+                        val reader = readers.next()
+                        try {
+                            reader.input = imageInput
+                            check(reader.getWidth(0) in 1..512 && reader.getHeight(0) in 1..512) {
+                                "Plugin icon dimensions must be at most 512 by 512 pixels"
+                            }
+                            check(reader.read(0) != null) { "Plugin icon cannot be decoded" }
+                        } finally {
+                            reader.dispose()
+                        }
+                    }
+                }
+            }
             val forbidden = listOf(
                 "org/schabi/newpipe/",
                 "kotlin/",
