@@ -202,29 +202,8 @@ public class YoutubeChannelTabExtractor extends ChannelTabExtractor {
     @Nonnull
     private String getSortContinuationToken(@Nonnull final JsonObject currentTabData)
             throws ParsingException {
-        final int sortIndex = getSelectedSortFilterIndex();
-        final JsonArray chips = currentTabData.getObject("content")
-                .getObject("richGridRenderer")
-                .getObject("header")
-                .getObject("chipBarViewModel")
-                .getArray("chips");
-
-        if (chips.size() <= sortIndex) {
-            throw new ParsingException("YouTube channel tab sort filter is not available");
-        }
-
-        final String token = chips.getObject(sortIndex)
-                .getObject("chipViewModel")
-                .getObject("tapCommand")
-                .getObject("innertubeCommand")
-                .getObject("continuationCommand")
-                .getString("token");
-
-        if (isNullOrEmpty(token)) {
-            throw new ParsingException("Could not get YouTube channel tab sort continuation");
-        }
-
-        return token;
+        return YoutubeChannelSort.continuationToken(
+                currentTabData, getSelectedSortFilterIndex());
     }
 
     private int getSelectedSortFilterIndex() throws ParsingException {

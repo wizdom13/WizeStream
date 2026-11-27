@@ -4,6 +4,10 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### YouTube channel sorting
+
+- Fix Popular and Oldest ordering on channel Videos and Live tabs when YouTube places sorting inside a dropdown beside membership filters.
+
 ## WizeStream 1.53.0 (`1053000`)
 
 ### Retained subscription alerts

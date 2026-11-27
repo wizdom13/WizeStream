@@ -11,6 +11,7 @@ import com.grack.nanojson.JsonWriter
 import java.util.ArrayDeque
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -31,7 +32,7 @@ import org.schabi.newpipe.extractor.search.filter.FilterItem
 import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeChannelTabLinkHandlerFactory
 
-/** Synthetic cards and tokens using the public Live-tab response shapes checked on 2026-11-24. */
+/** Synthetic cards and tokens using public channel-tab response shapes checked in November 2026. */
 class YoutubeChannelLiveSortTest {
     private val previousDownloader = NewPipe.getDownloader()
     private val previousLocalization = NewPipe.getPreferredLocalization()
@@ -55,9 +56,18 @@ class YoutubeChannelLiveSortTest {
                     assertTrue(request.url().startsWith("https://www.youtube.com/youtubei/v1/browse?"))
                     val body = parse(requireNotNull(request.dataToSend()).toString(Charsets.UTF_8))
                     requests += body
+                    assertFalse(
+                        "Changing sort must not request a membership visibility filter",
+                        body.getString("continuation") in MEMBERSHIP_TOKENS
+                    )
                     if (expected.continuation == null) {
                         assertEquals(CHANNEL_ID, body.getString("browseId"))
-                        assertEquals("EgdzdHJlYW1z8gYECgJ6AA%3D%3D", body.getString("params"))
+                        val params = when (expected.initialTab) {
+                            ChannelTabs.VIDEOS -> "EgZ2aWRlb3PyBgQKAjoA"
+                            ChannelTabs.LIVESTREAMS -> "EgdzdHJlYW1z8gYECgJ6AA%3D%3D"
+                            else -> error("Unsupported fixture tab: ${expected.initialTab}")
+                        }
+                        assertEquals(params, body.getString("params"))
                         assertNull(body.getString("continuation"))
                     } else {
                         assertEquals(expected.continuation, body.getString("continuation"))
@@ -93,6 +103,74 @@ class YoutubeChannelLiveSortTest {
     @Test
     fun oldestFollowsItsServerTokenAndContinuation() {
         assertSortedPages("oldest", "ccccccccccc")
+    }
+
+    @Test
+    fun popularUsesTheDropdownChoiceOnVideosAndLiveWithoutChangingVisibility() {
+        for (tab in listOf(ChannelTabs.VIDEOS, ChannelTabs.LIVESTREAMS)) {
+            assertDropdownSortedPages(tab, "popular", "bbbbbbbbbbb")
+        }
+    }
+
+    @Test
+    fun oldestUsesTheDropdownChoiceOnVideosAndLiveWithoutChangingVisibility() {
+        for (tab in listOf(ChannelTabs.VIDEOS, ChannelTabs.LIVESTREAMS)) {
+            assertDropdownSortedPages(tab, "oldest", "ccccccccccc")
+        }
+    }
+
+    @Test
+    fun localizedDropdownTitlesAndEntityKeysKeepVideosAndLiveSorting() {
+        val labels = listOf("الأحدث", "الرائجة", "الأقدم")
+        for (tab in listOf(ChannelTabs.VIDEOS, ChannelTabs.LIVESTREAMS)) {
+            assertDropdownSortedPages(tab, "popular", "bbbbbbbbbbb", labels)
+            assertDropdownSortedPages(tab, "oldest", "ccccccccccc", labels)
+        }
+    }
+
+    @Test
+    fun latestKeepsTheInitialVideosAndLivePageWithADropdown() {
+        for (tab in listOf(ChannelTabs.VIDEOS, ChannelTabs.LIVESTREAMS)) {
+            val requestCount = requests.size
+            exchanges.add(Exchange(null, dropdownResponse(tab), tab))
+            val first = extractor(handler("latest", tab)).initialPage
+
+            assertTrue(first.errors.toString(), first.errors.isEmpty())
+            assertEquals(listOf("https://www.youtube.com/watch?v=aaaaaaaaaaa"), first.items.map { it.url })
+            assertEquals(requestCount + 1, requests.size)
+            assertTrue(exchanges.isEmpty())
+        }
+    }
+
+    @Test
+    fun malformedDropdownCannotFallBackToTheMembershipVisibilityChips() {
+        for (tab in listOf(ChannelTabs.VIDEOS, ChannelTabs.LIVESTREAMS)) {
+            for (missingChoice in listOf(false, true)) {
+                val initial = parse(dropdownResponse(tab))
+                val choices = initial.getObject("contents").getObject("twoColumnBrowseResultsRenderer")
+                    .getArray("tabs").getObject(0).getObject("tabRenderer")
+                    .getObject("content").getObject("richGridRenderer")
+                    .getObject("header").getObject("chipBarViewModel").getArray("chips")
+                    .getObject(0).getObject("chipViewModel").getObject("tapCommand")
+                    .getObject("innertubeCommand").getObject("showSheetCommand")
+                    .getObject("panelLoadingStrategy").getObject("inlineContent")
+                    .getObject("sheetViewModel").getObject("content").getObject("listViewModel")
+                    .getArray("listItems")
+                if (missingChoice) {
+                    choices.removeAt(2)
+                } else {
+                    choices.getObject(2).getObject("listItemViewModel")
+                        .getObject("rendererContext").getObject("commandContext").remove("onTap")
+                }
+                val requestCount = requests.size
+                exchanges.add(Exchange(null, JsonWriter.string(initial), tab))
+                val extractor = extractor(handler("oldest", tab))
+
+                assertThrows(ParsingException::class.java) { extractor.initialPage }
+                assertEquals(requestCount + 1, requests.size)
+                assertTrue(exchanges.isEmpty())
+            }
+        }
     }
 
     @Test
@@ -325,6 +403,45 @@ class YoutubeChannelLiveSortTest {
         }
     }
 
+    private fun assertDropdownSortedPages(
+        tab: String,
+        sort: String,
+        firstId: String,
+        labels: List<String> = listOf("Latest", "Popular", "Oldest")
+    ) {
+        val requestCount = requests.size
+        exchanges.add(Exchange(null, dropdownResponse(tab, labels), tab))
+        exchanges.add(
+            Exchange(
+                "dropdown-$sort",
+                response(
+                    command("reloadContinuationItemsCommand", "channel-feed", listOf(header()), "RELOAD_CONTINUATION_SLOT_HEADER"),
+                    command("reloadContinuationItemsCommand", "channel-feed", listOf(card(firstId), continuation("$sort-next")), "RELOAD_CONTINUATION_SLOT_BODY")
+                )
+            )
+        )
+        exchanges.add(
+            Exchange(
+                "$sort-next",
+                response(command("appendContinuationItemsAction", "channel-feed", listOf(card("ddddddddddd"))))
+            )
+        )
+        val handler = handler(sort, tab)
+        val first = extractor(handler).initialPage
+        assertTrue(first.errors.toString(), first.errors.isEmpty())
+        assertEquals(listOf("https://www.youtube.com/watch?v=$firstId"), first.items.map { it.url })
+        val next = requireNotNull(first.nextPage)
+        assertEquals("channel-feed", next.id)
+        assertEquals("$sort-next", parse(requireNotNull(next.body).toString(Charsets.UTF_8)).getString("continuation"))
+
+        val second = YoutubeChannelTabExtractor(ServiceList.YouTube, handler).getPage(next)
+        assertTrue(second.errors.toString(), second.errors.isEmpty())
+        assertEquals(listOf("https://www.youtube.com/watch?v=ddddddddddd"), second.items.map { it.url })
+        assertNull(second.nextPage)
+        assertEquals(requestCount + 3, requests.size)
+        assertTrue(exchanges.isEmpty())
+    }
+
     private fun assertSortedPages(sort: String, firstId: String) {
         exchanges.add(Exchange(null, initialResponse()))
         exchanges.add(Exchange("sort-$sort", continuationResponse("reloadContinuationItemsCommand", firstId, "$sort-next")))
@@ -346,21 +463,21 @@ class YoutubeChannelLiveSortTest {
         assertTrue(exchanges.isEmpty())
     }
 
-    private fun handler(sort: String): ListLinkHandler = YoutubeChannelTabLinkHandlerFactory.getInstance()
-        .fromQuery("channel/$CHANNEL_ID", listOf(FilterItem(-1, ChannelTabs.LIVESTREAMS)), listOf(FilterItem(-1, sort)))
+    private fun handler(sort: String, tab: String = ChannelTabs.LIVESTREAMS): ListLinkHandler = YoutubeChannelTabLinkHandlerFactory.getInstance()
+        .fromQuery("channel/$CHANNEL_ID", listOf(FilterItem(-1, tab)), listOf(FilterItem(-1, sort)))
 
     private fun extractor(handler: ListLinkHandler): YoutubeChannelTabExtractor = YoutubeChannelTabExtractor(ServiceList.YouTube, handler).apply { fetchPage() }
 
     private fun parse(text: String): JsonObject = JsonParser.`object`().from(text)
 
-    private fun initialResponse(targetId: String? = null): String = """
+    private fun initialResponse(targetId: String? = null, tab: String = ChannelTabs.LIVESTREAMS): String = """
         {
           "header": {"c4TabbedHeaderRenderer": {
             "channelId": "$CHANNEL_ID", "title": "Fixture channel",
             "avatar": {"thumbnails": [{"url": "https://example.invalid/avatar.jpg", "width": 48, "height": 48}]}
           }},
           "contents": {"twoColumnBrowseResultsRenderer": {"tabs": [{"tabRenderer": {
-            "endpoint": {"commandMetadata": {"webCommandMetadata": {"url": "/channel/$CHANNEL_ID/streams"}}},
+            "endpoint": {"commandMetadata": {"webCommandMetadata": {"url": "/channel/$CHANNEL_ID/${if (tab == ChannelTabs.VIDEOS) "videos" else "streams"}"}}},
             "content": {"richGridRenderer": {
               ${targetId?.let { "\"targetId\":\"$it\"," }.orEmpty()}
               "header": {"chipBarViewModel": {"chips": [${listOf("latest", "popular", "oldest").joinToString(",", transform = ::chip)}]}},
@@ -368,6 +485,71 @@ class YoutubeChannelLiveSortTest {
             }}
           }}]}}
         }
+    """.trimIndent()
+
+    /**
+     * TheRealistAzad's public WEB browse response on 2026-11-27 supplied this dropdown
+     * before Members only and Public. Labels and entity keys are also localized by YouTube.
+     * All identifiers, continuation tokens, tracking data and content are synthetic here.
+     */
+    private fun dropdownResponse(
+        tab: String,
+        labels: List<String> = listOf("Latest", "Popular", "Oldest")
+    ): String {
+        val initial = parse(initialResponse("channel-feed", tab))
+        val sortItems = listOf("latest", "popular", "oldest").mapIndexed { index, sort ->
+            dropdownItem(sort, labels[index])
+        }
+        val header = parse(
+            """
+            {"chipBarViewModel":{"chips":[
+              {"chipViewModel":{
+                "text":"${labels[0]}",
+                "displayType":"CHIP_VIEW_MODEL_DISPLAY_TYPE_DROP_DOWN",
+                "tapCommand":{"innertubeCommand":{"showSheetCommand":{
+                  "panelLoadingStrategy":{"inlineContent":{"sheetViewModel":{"content":{
+                    "listViewModel":{"listItems":[${sortItems.joinToString(",")}]}
+                  }}}}
+                }}}
+              }},
+              ${visibilityChip("Members only", MEMBERS_ONLY_TOKEN)},
+              ${visibilityChip("Public", PUBLIC_TOKEN)}
+            ]}}
+            """.trimIndent()
+        )
+        initial.getObject("contents").getObject("twoColumnBrowseResultsRenderer")
+            .getArray("tabs").getObject(0).getObject("tabRenderer")
+            .getObject("content").getObject("richGridRenderer")["header"] = header
+        return JsonWriter.string(initial)
+    }
+
+    private fun dropdownItem(sort: String, label: String): String = """
+        {"listItemViewModel":{
+          "title":{"content":"$label"},
+          "entityKey":":$label",
+          "isSelected":${sort == "latest"},
+          "rendererContext":{"commandContext":{"onTap":{"innertubeCommand":{
+            "commandExecutorCommand":{"commands":[
+              {"entityUpdateCommand":{"entityBatchUpdate":{"mutations":[
+                {"entityKey":"sort-chip","type":"ENTITY_MUTATION_TYPE_REPLACE",
+                 "payload":{"chipEntity":{"key":"sort-chip","text":"$label"}}}
+              ]}}},
+              {"commandMetadata":{"webCommandMetadata":{"sendPost":true,"apiUrl":"/youtubei/v1/browse"}},
+               "continuationCommand":{"token":"dropdown-$sort","request":"CONTINUATION_REQUEST_TYPE_BROWSE",
+                "command":{"showReloadUiCommand":{"targetId":"channel-feed"}}}}
+            ]}
+          }}}}
+        }}
+    """.trimIndent()
+
+    private fun visibilityChip(label: String, token: String): String = """
+        {"chipViewModel":{
+          "text":"$label",
+          "displayType":"CHIP_VIEW_MODEL_DISPLAY_TYPE_UNSPECIFIED",
+          "tapCommand":{"innertubeCommand":{
+            "continuationCommand":{"token":"$token","request":"CONTINUATION_REQUEST_TYPE_BROWSE"}
+          }}
+        }}
     """.trimIndent()
 
     private fun chip(sort: String): String = """
@@ -412,9 +594,16 @@ class YoutubeChannelLiveSortTest {
         }}}}
     """.trimIndent()
 
-    private data class Exchange(val continuation: String?, val response: String)
+    private data class Exchange(
+        val continuation: String?,
+        val response: String,
+        val initialTab: String = ChannelTabs.LIVESTREAMS
+    )
 
     companion object {
         private const val CHANNEL_ID = "UC0000000000000000000000"
+        private const val MEMBERS_ONLY_TOKEN = "membership-members-only"
+        private const val PUBLIC_TOKEN = "membership-public"
+        private val MEMBERSHIP_TOKENS = setOf(MEMBERS_ONLY_TOKEN, PUBLIC_TOKEN)
     }
 }
