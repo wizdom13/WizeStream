@@ -4,6 +4,10 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Home tab chooser
+
+- Keep the Customize home tab chooser open with an empty list when a search has no matches, and restore the available tabs when the query is cleared.
+
 ### Plugin import errors
 
 - Show complete, copyable plugin import errors in a Material 3 dialog, including package and catalog versions, checksum comparisons and metadata rejection details.
