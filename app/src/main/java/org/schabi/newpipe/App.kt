@@ -151,6 +151,7 @@ open class App :
             AiSListSyncWorker.initialize(this)
             org.schabi.newpipe.learning.LearningReminders.initialize(this)
             org.schabi.newpipe.local.feed.notifications.StickyNotificationCoordinator.initialize(this)
+            org.schabi.newpipe.update.UpdateCacheCleanup.schedule(this)
         }
 
         ServiceHelper.initServices(this)

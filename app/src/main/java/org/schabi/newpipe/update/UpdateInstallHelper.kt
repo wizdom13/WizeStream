@@ -38,6 +38,7 @@ object UpdateInstallHelper {
             return false
         }
         val apkFile = File(apkPath)
+        if (!UpdateCacheCleanup.protectForInstallation(context, apkFile)) return false
         try {
             UpdateApkVerifier.verify(context, apkFile, expectedSha256, expectedVersion)
         } catch (e: IOException) {

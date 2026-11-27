@@ -519,6 +519,8 @@ public class UpdateSettingsFragment extends BasePreferenceFragment {
     private void beginInstallation(@NonNull final String apkPath,
                                    @NonNull final String apkSha256,
                                    @NonNull final String version) {
+        org.schabi.newpipe.update.UpdateCacheCleanup.protectForInstallation(
+                requireContext(), apkPath);
         pendingApkPath = apkPath;
         pendingApkSha256 = apkSha256;
         pendingApkVersion = version;
