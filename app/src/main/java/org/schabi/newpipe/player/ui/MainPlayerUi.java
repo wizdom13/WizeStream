@@ -454,6 +454,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
         updateListenModeUi(player.getPlaybackPresentationMode());
         updateLearningNoteButtonVisibility(player.getCurrentStreamInfo().orElse(null));
         binding.switchMute.setVisibility(View.VISIBLE);
+        ChannelMuteControls.show(binding, false);
         binding.playerCloseButton.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         // Top controls have a large minHeight which is allows to drag the player
         // down in fullscreen mode (just larger area to make easy to locate by finger)

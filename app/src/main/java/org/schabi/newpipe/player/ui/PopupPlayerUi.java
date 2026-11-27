@@ -183,6 +183,7 @@ public final class PopupPlayerUi extends VideoPlayerUi {
         binding.videoAdjustmentsButton.setVisibility(View.GONE);
         binding.sleepTimerCountdown.setVisibility(View.GONE);
         binding.switchMute.setVisibility(View.GONE);
+        ChannelMuteControls.show(binding, true);
         binding.playerCloseButton.setVisibility(View.GONE);
         binding.topControls.bringToFront();
         binding.topControls.setClickable(false);
@@ -336,7 +337,9 @@ public final class PopupPlayerUi extends VideoPlayerUi {
                 R.dimen.popup_minimum_width);
         final PopupVideoSizing.Size size = PopupVideoSizing.fit(
                 preferredPopupWidth > 0 ? preferredPopupWidth : popupLayoutParams.width,
-                screenWidth, screenHeight, minWidth, popupVideoAspectRatio);
+                screenWidth, screenHeight, minWidth, popupVideoAspectRatio,
+                context.getResources().getDimensionPixelSize(
+                        R.dimen.player_popup_minimum_controls_height));
         if (popupLayoutParams.width == size.getWidth()
                 && popupLayoutParams.height == size.getHeight()) {
             return;
@@ -535,7 +538,9 @@ public final class PopupPlayerUi extends VideoPlayerUi {
         final PopupVideoSizing.Size size = PopupVideoSizing.fit(
                 preferredPopupWidth, screenWidth, screenHeight,
                 context.getResources().getDimensionPixelSize(R.dimen.popup_minimum_width),
-                popupVideoAspectRatio);
+                popupVideoAspectRatio,
+                context.getResources().getDimensionPixelSize(
+                        R.dimen.player_popup_minimum_controls_height));
 
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 size.getWidth(), size.getHeight(),

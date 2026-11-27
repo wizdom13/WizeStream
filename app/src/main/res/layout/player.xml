@@ -930,6 +930,22 @@
                         tools:ignore="HardcodedText,RtlHardcoded,RtlSymmetry" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/channelMuteButton"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="@string/mute"
+                        android:focusable="true"
+                        android:nextFocusUp="@id/playbackSeekBar"
+                        android:padding="@dimen/player_main_icon_buttons_padding"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_volume_up"
+                        android:visibility="gone"
+                        app:tint="@color/white"
+                        tools:visibility="visible" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/screenRotationButton"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
@@ -947,6 +963,7 @@
                         tools:ignore="RtlHardcoded"
                         tools:visibility="visible" />
                 </LinearLayout>
+
             </RelativeLayout>
 
             <!-- Match the physical rewind/forward gesture directions in every locale. -->
@@ -1000,6 +1017,56 @@
                     android:src="@drawable/ic_next"
                     app:tint="@color/white" />
 
+            </LinearLayout>
+
+            <!-- Keep popup tools reachable beside the fixed mute/fullscreen pair. -->
+            <HorizontalScrollView
+                android:id="@+id/popupToolsScroller"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_toStartOf="@+id/popupPlaybackActions"
+                android:fadeScrollbars="false"
+                android:scrollbars="horizontal"
+                android:visibility="gone" />
+
+            <!-- Above transport controls so the complete popup action targets receive taps. -->
+            <LinearLayout
+                android:id="@+id/popupPlaybackActions"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/popupMuteButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/mute"
+                    android:focusable="true"
+                    android:nextFocusDown="@id/playbackSeekBar"
+                    android:padding="@dimen/player_main_icon_buttons_padding"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_volume_up"
+                    app:tint="@color/white" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/popupFullscreenButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/toggle_fullscreen"
+                    android:focusable="true"
+                    android:nextFocusDown="@id/playbackSeekBar"
+                    android:padding="@dimen/player_main_icon_buttons_padding"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_fullscreen"
+                    app:tint="@color/white" />
             </LinearLayout>
 
         </RelativeLayout>

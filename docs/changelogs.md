@@ -36,6 +36,11 @@ Release history is listed newest first. The number beside each release is its An
 - Use compact Material 3 recording and menu actions with space between controls and the screen edges. Show Retry only after a connection failure, and keep Saved chat and danmaku available from the menu.
 - Keep the newest messages visible above the bottom navigation while the video header is expanded.
 
+### Channel playback mute
+
+- Add a mute button beside fullscreen in the main and popup video controls, available without opening the extra tools.
+- Remember mute and unmute for each service and channel across videos and app restarts. Videos without a channel keep a temporary choice for that video.
+
 ## WizeStream 1.53.0 (`1053000`)
 
 ### Retained subscription alerts

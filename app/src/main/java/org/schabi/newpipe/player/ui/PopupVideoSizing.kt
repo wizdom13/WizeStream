@@ -12,7 +12,8 @@ internal object PopupVideoSizing {
         availableWidth: Int,
         availableHeight: Int,
         minimumWidth: Int,
-        videoAspectRatio: Float
+        videoAspectRatio: Float,
+        minimumHeight: Int = 0
     ): Size {
         val maxWidth = availableWidth.coerceAtLeast(1)
         val maxHeight = availableHeight.coerceAtLeast(1)
@@ -20,7 +21,8 @@ internal object PopupVideoSizing {
             ?.takeIf { it < 1.0f } ?: (16f / 9f)
         val minWidth = minimumWidth.coerceIn(1, maxWidth)
         val wantedWidth = requestedWidth.coerceIn(minWidth, maxWidth)
-        val wantedHeight = (wantedWidth / effectiveRatio).roundToInt().coerceAtLeast(1)
+        val minHeight = minimumHeight.coerceIn(1, maxHeight)
+        val wantedHeight = (wantedWidth / effectiveRatio).roundToInt().coerceAtLeast(minHeight)
         if (wantedHeight <= maxHeight) {
             return Size(wantedWidth, wantedHeight)
         }
