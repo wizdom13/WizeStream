@@ -44,8 +44,18 @@ class PreparedPluginPackage internal constructor(
     @Volatile private var closed = false
 
     /** A match chooses metadata for confirmation; installation still verifies its signature. */
-    fun matches(entry: PluginRepository.Entry): Boolean = sha256.equals(entry.sha256, ignoreCase = true) &&
-        runCatching { PluginInstallPolicy.checkManifest(entry, manifest, emptyMap()) }.isSuccess
+    fun matches(entry: PluginRepository.Entry): Boolean = compare(entry).matches
+
+    /** Report both checks, using the same manifest policy that the installer enforces. */
+    internal fun compare(entry: PluginRepository.Entry): PluginPackageComparison {
+        val manifestFailure = runCatching {
+            PluginInstallPolicy.checkManifest(entry, manifest, emptyMap())
+        }.exceptionOrNull()
+        return PluginPackageComparison(
+            sha256.equals(entry.sha256, ignoreCase = true),
+            manifestFailure?.let { it.message?.takeIf(String::isNotBlank) ?: it.javaClass.simpleName }
+        )
+    }
 
     internal fun openStream(): InputStream {
         if (closed) throw PluginException("The selected plugin file is no longer available")
@@ -56,6 +66,10 @@ class PreparedPluginPackage internal constructor(
         closed = true
         file.delete()
     }
+}
+
+internal data class PluginPackageComparison(val checksumMatches: Boolean, val manifestError: String?) {
+    val matches: Boolean get() = checksumMatches && manifestError == null
 }
 
 /** Local transport is kept outside the public, HTTPS-oriented plugin SDK. */

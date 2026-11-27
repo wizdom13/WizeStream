@@ -446,11 +446,7 @@ class PluginSettingsFragment : BasePreferenceFragment() {
                     installing = false
                     if (!isAdded) return@subscribe
                     rebuild()
-                    Toast.makeText(
-                        context,
-                        getString(R.string.plugin_install_failed, entry.name, e.message ?: e.javaClass.simpleName),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    sourceActions.showError(getString(R.string.plugin_install_failed, entry.name, e.message ?: e.javaClass.simpleName))
                 })
         )
     }

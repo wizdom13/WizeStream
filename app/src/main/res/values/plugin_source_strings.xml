@@ -33,4 +33,20 @@
     <string name="plugins_source_loading">Opening plugin source…</string>
     <string name="plugins_source_no_plugins">No plugins to show in this source. Plugins marked as NSFW are hidden unless Show NSFW plugins is enabled.</string>
     <string name="plugins_source_disabled">Enable plugins before adding a source or installing a package</string>
+    <string name="plugins_error_title">Plugin import failed</string>
+    <string name="plugins_error_copy">Copy details</string>
+    <string name="plugins_error_environment">WizeStream %1$s (%2$d) · Android API %3$d</string>
+    <string name="plugins_error_package">Selected package: %s</string>
+    <string name="plugins_error_catalog">Selected catalog: %s</string>
+    <string name="plugins_error_identity">%1$s · version %2$s (%3$d)</string>
+    <string name="plugins_error_checksum">SHA-256: %s</string>
+    <string name="plugins_error_checksum_matches">Package checksum matches this entry.</string>
+    <string name="plugins_error_checksum_differs">Package checksum differs from this entry.</string>
+    <string name="plugins_error_manifest">Package metadata: %s</string>
+    <string name="plugins_error_manifest_matches">Package metadata matches this entry.</string>
+    <string name="plugins_error_empty_catalog">This catalog contains no usable plugin entries.</string>
+    <string name="plugins_error_missing_plugin">This catalog contains no entry for %s.</string>
+    <string name="plugins_error_listing_changed">This entry matches the package, but the selected listing has changed. Select the plugin again.</string>
+    <string name="plugins_error_more_entries">Additional entries for this plugin: %d</string>
+    <string name="plugins_error_package_changed">The package contents changed after the first selection. Initial SHA-256: %s</string>
 </resources>
