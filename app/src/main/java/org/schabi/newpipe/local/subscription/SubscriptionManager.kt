@@ -41,6 +41,10 @@ class SubscriptionManager @JvmOverloads constructor(
     fun subscriptionTable(): SubscriptionDAO = subscriptionTable
     fun subscriptions() = subscriptionTable.getAllForProfile(profileId)
 
+    fun subscriptionCount(): Flowable<Int> = subscriptionTable.rowCountForProfile(profileId)
+        .map { it.toInt() }
+        .distinctUntilChanged()
+
     fun getSubscriptionById(subscriptionId: Long): SubscriptionEntity? {
         return subscriptionTable.getSubscriptionForProfile(profileId, subscriptionId)
     }

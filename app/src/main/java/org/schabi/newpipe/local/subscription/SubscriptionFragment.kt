@@ -436,11 +436,11 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
             restoreScroll(savedInstanceState)
         }
         updateUnsubscribeAction()
-        countDisposable = subscriptionManager.subscriptions()
+        countDisposable = subscriptionManager.subscriptionCount()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ channels ->
-                subscriptionsHeader.count = channels.size
+            .subscribe({ count ->
+                subscriptionsHeader.count = count
                 subscriptionsHeader.notifyChanged()
                 updateSortingHeader()
             }, { error ->
@@ -728,6 +728,11 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
 
         when (result) {
             is SubscriptionState.LoadedState -> {
+                val itemVersion = if (SubscriptionViewModel.shouldUseGridForSubscription(requireContext())) {
+                    ChannelItem.ItemVersion.GRID
+                } else {
+                    ChannelItem.ItemVersion.MINI
+                }
                 result.subscriptions.forEach {
                     if (it is org.schabi.newpipe.local.subscription.item.SubscriptionSeparatorItem) {
                         val entry = it.entry
@@ -735,11 +740,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>(), ContextualS
                     }
                     if (it is ChannelItem) {
                         it.gesturesListener = listenerChannelItem
-                        it.itemVersion = if (SubscriptionViewModel.shouldUseGridForSubscription(requireContext())) {
-                            ChannelItem.ItemVersion.GRID
-                        } else {
-                            ChannelItem.ItemVersion.MINI
-                        }
+                        it.itemVersion = itemVersion
                     }
                 }
 

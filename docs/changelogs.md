@@ -8,6 +8,11 @@ Release history is listed newest first. The number beside each release is its An
 
 - Show complete, copyable plugin import errors in a Material 3 dialog, including package and catalog versions, checksum comparisons and metadata rejection details.
 
+### Library navigation
+
+- Keep the Bookmarks list in place when returning to the tab with unchanged categories, preserving its selection, order and scroll position.
+- Avoid rebuilding unchanged subscription rows and count headers after database updates, while continuing to show changes to channels, profiles, searches and saved arrangements.
+
 ### YouTube channel sorting
 
 - Fix Popular and Oldest ordering on channel Videos and Live tabs when YouTube places sorting inside a dropdown beside membership filters.

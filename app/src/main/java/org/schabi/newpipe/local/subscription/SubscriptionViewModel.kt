@@ -106,6 +106,10 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                     filterQuery = query
                 )
                     .subscribeOn(Schedulers.io())
+                    // Room also invalidates this query for updates that leave its rows unchanged.
+                    // Snapshot mutable entities before comparison so a later mutation cannot hide it.
+                    .map { channels -> channels.map { it.copy() } }
+                    .distinctUntilChanged()
                     .throttleLatestDropOverflow(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
             }
         return Flowable.combineLatest(
