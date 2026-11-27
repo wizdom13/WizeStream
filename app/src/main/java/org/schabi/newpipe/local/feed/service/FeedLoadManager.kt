@@ -67,6 +67,37 @@ class FeedLoadManager @JvmOverloads constructor(
     }
 
     /**
+     * Refresh the one subscription the user explicitly selected, even when its feed is muted.
+     * The saved identity and modes are checked again before fetching and committing. A removed
+     * or changed subscription produces an OnComplete notification without changing the feed.
+     * This operation bypasses the aggregate refresh threshold and never publishes group events.
+     */
+    fun startLoadingSubscription(request: ChannelFeedRefreshRequest): Single<List<Notification<FeedUpdateInfo>>> {
+        feedScope = null
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val results = Flowable.fromCallable<Notification<FeedUpdateInfo>> {
+            currentProgress.set(0)
+            maxProgress.set(1)
+            val subscription = subscriptionManager.getSubscriptionById(request.subscriptionId)
+            if (subscription == null || !canRefreshSubscription(subscription, request)) {
+                Notification.createOnComplete()
+            } else {
+                currentUpdateDescription = subscription.name.orEmpty()
+                notificationUpdater.onNext(currentUpdateDescription)
+                loadStreams(
+                    createFeedLoadRequest(
+                        subscription,
+                        preferences.getBoolean(context.getString(R.string.feed_use_dedicated_fetch_method_key), false)
+                    ),
+                    preferences,
+                    request
+                )
+            }
+        }
+        return storeResults(results, manualRequest = request)
+    }
+
+    /**
      * Start checking for new streams of a subscription group.
      * @param groupId The ID of the subscription group to load. When using
      * [FeedGroupEntity.GROUP_ALL_ID], all subscriptions are loaded. When using
@@ -181,14 +212,15 @@ class FeedLoadManager @JvmOverloads constructor(
     /** Serialized persistence shared by manual and scheduled refreshes. */
     internal fun storeResults(
         results: Flowable<Notification<FeedUpdateInfo>>,
-        retainResults: Boolean = true
+        retainResults: Boolean = true,
+        manualRequest: ChannelFeedRefreshRequest? = null
     ): Single<List<Notification<FeedUpdateInfo>>> {
         val persistedResults = results
             .filter { !cancelSignal.get() }
             .observeOn(Schedulers.io())
             // Persist each completed channel before announcing progress. Slow or failed
             // channels must not hold back content already retrieved from other channels.
-            .map(DatabaseWriter())
+            .map(DatabaseWriter(manualRequest))
             .doOnNext(NotificationConsumer())
             .subscribeOn(Schedulers.io())
 
@@ -201,7 +233,7 @@ class FeedLoadManager @JvmOverloads constructor(
         }
 
         return completion
-            .flatMap { results -> postProcessFeed().toSingleDefault(results) }
+            .flatMap { results -> postProcessFeed(cleanUp = manualRequest == null).toSingleDefault(results) }
             .doOnError { cancel() }
             .doOnDispose(::cancel)
     }
@@ -291,7 +323,8 @@ class FeedLoadManager @JvmOverloads constructor(
 
     private fun loadStreams(
         request: FeedLoadRequest,
-        defaultSharedPreferences: SharedPreferences
+        defaultSharedPreferences: SharedPreferences,
+        manualRequest: ChannelFeedRefreshRequest? = null
     ): Notification<FeedUpdateInfo> {
         val subscriptionEntity = request.subscriptionEntity
         var error: Throwable? = null
@@ -303,9 +336,10 @@ class FeedLoadManager @JvmOverloads constructor(
 
         try {
             // Requests may wait in a batch after candidate selection. Do not start fetching a
-            // channel muted in the meantime; completion still advances this batch's progress.
+            // channel muted in the meantime unless this exact subscription was explicitly
+            // selected. Completion still advances this batch's progress when it is skipped.
             val current = subscriptionManager.getSubscriptionById(subscriptionEntity.uid)
-            if (current == null || current.feedMuted) return Notification.createOnComplete()
+            if (current == null || !canRefreshSubscription(current, manualRequest)) return Notification.createOnComplete()
             // check for and load new streams
             // either by using the dedicated feed method or by getting the channel info
             var originalInfo: Info? = null
@@ -385,9 +419,10 @@ class FeedLoadManager @JvmOverloads constructor(
      * Remove streams from the feed which are older than [FeedDatabaseManager.oldestAllowedDate(context)].
      * Remove streams from the database which are not linked / used by any table.
      */
-    private fun postProcessFeed() = Completable.fromRunnable {
+    private fun postProcessFeed(cleanUp: Boolean) = Completable.fromRunnable {
         postEvent(FeedEventManager.Event.ProgressEvent(R.string.feed_processing_message))
-        feedDatabaseManager.removeOrphansOrOlderStreams()
+        // A one-channel refresh must not expire other channels' cached feed memberships.
+        if (cleanUp) feedDatabaseManager.removeOrphansOrOlderStreams()
 
         postEvent(FeedEventManager.Event.SuccessResultEvent(feedResultsHolder.itemsErrors))
     }.doOnSubscribe {
@@ -397,6 +432,20 @@ class FeedLoadManager @JvmOverloads constructor(
         notificationUpdater.onNext(context.getString(R.string.feed_processing_message))
         postEvent(FeedEventManager.Event.ProgressEvent(R.string.feed_processing_message))
     }.subscribeOn(Schedulers.io())
+
+    private fun canRefreshSubscription(
+        subscription: SubscriptionEntity,
+        manualRequest: ChannelFeedRefreshRequest?
+    ): Boolean {
+        if (manualRequest == null) return !subscription.feedMuted
+        return !cancelSignal.get() && manualRequest.profileId == profileId && manualRequest.matches(subscription) &&
+            SavedServicePolicy.canRefresh(
+                subscription.serviceId,
+                ServiceList.all().mapTo(mutableSetOf()) { it.serviceId },
+                PluginManager.loadedProfileId,
+                profileId
+            )
+    }
 
     private fun postEvent(event: FeedEventManager.Event) {
         synchronized(cancelSignal) {
@@ -417,7 +466,9 @@ class FeedLoadManager @JvmOverloads constructor(
         }
     }
 
-    private inner class DatabaseWriter : Function<Notification<FeedUpdateInfo>, Notification<FeedUpdateInfo>> {
+    private inner class DatabaseWriter(
+        private val manualRequest: ChannelFeedRefreshRequest?
+    ) : Function<Notification<FeedUpdateInfo>, Notification<FeedUpdateInfo>> {
 
         override fun apply(notification: Notification<FeedUpdateInfo>): Notification<FeedUpdateInfo> {
             var archiveItems: List<StreamInfoItem>? = null
@@ -430,16 +481,19 @@ class FeedLoadManager @JvmOverloads constructor(
                         // A user can unsubscribe or mute while this channel is still fetching.
                         // Reread under the write transaction so its result cannot undo that choice.
                         val subscription = subscriptionManager.getSubscriptionById(info.uid)
-                        if (subscription == null || subscription.feedMuted) {
+                        if (subscription == null || !canRefreshSubscription(subscription, manualRequest)) {
                             info.newStreams = emptyList()
                             discarded = true
                             return@runInTransaction
                         }
-                        val updateModeMask = feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
+                        val updateModeMask = manualRequest?.youtubeModeMask
+                            ?: feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
                             ?: info.youtubeModeMask
 
                         notification.value!!.newStreams = filterNewStreams(info.streams)
-                        notificationCommitted = notificationRecorder?.invoke(feedDatabaseManager.database(), info, subscription)
+                        if (manualRequest == null) {
+                            notificationCommitted = notificationRecorder?.invoke(feedDatabaseManager.database(), info, subscription)
+                        }
 
                         feedDatabaseManager.upsertAll(
                             info.uid,
@@ -472,11 +526,12 @@ class FeedLoadManager @JvmOverloads constructor(
                                 subscriptionManager.getSubscriptionById(
                                     error.subscriptionId
                                 )
-                            if (subscription == null || subscription.feedMuted) {
+                            if (subscription == null || !canRefreshSubscription(subscription, manualRequest)) {
                                 discarded = true
                                 return@runInTransaction
                             }
-                            val updateModeMask = feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
+                            val updateModeMask = manualRequest?.youtubeModeMask
+                                ?: feedScope?.takeUnless { it.serviceId == FeedScope.ALL_SERVICES }?.youtubeModeMask
                                 ?: subscription.youtubeModeMask
                             feedDatabaseManager.markAsOutdated(
                                 error.subscriptionId,

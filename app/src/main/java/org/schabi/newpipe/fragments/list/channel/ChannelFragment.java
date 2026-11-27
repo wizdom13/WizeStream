@@ -133,6 +133,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     private MenuItem menuAutomaticDownloadsButton;
     private MenuItem menuSubscribeProfileButton;
     private SubscriptionEntity channelSubscription;
+    private ChannelFeedRefreshMenu channelFeedRefreshMenu;
 
     public static ChannelFragment getInstance(final int serviceId, final String url,
                                               final String name) {
@@ -257,6 +258,10 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
             }
         };
         activity.addMenuProvider(menuProvider, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
+        channelFeedRefreshMenu = ChannelFeedRefreshMenu.attach(this);
+        if (currentInfo != null) {
+            channelFeedRefreshMenu.bind(currentInfo);
+        }
     }
 
     @Override
@@ -403,6 +408,12 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 applySearchToTab(position);
             }
         });
+    }
+
+    @Override
+    public void onDestroyView() {
+        channelFeedRefreshMenu = null;
+        super.onDestroyView();
     }
 
     @Override
@@ -1084,6 +1095,9 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     public void handleResult(@NonNull final ChannelInfo result) {
         super.handleResult(result);
         currentInfo = result;
+        if (channelFeedRefreshMenu != null) {
+            channelFeedRefreshMenu.bind(result);
+        }
         setInitialData(result.getServiceId(), result.getOriginalUrl(), result.getName());
 
         if (ImageStrategy.shouldLoadImages() && !result.getBanners().isEmpty()) {
