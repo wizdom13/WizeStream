@@ -8,6 +8,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.BaseAdapter
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -55,11 +56,12 @@ object SearchableTabChooser {
 
             override fun getItem(position: Int) = items[indices[position]]
 
-            override fun getItemId(position: Int) = indices[position].toLong()
+            // ListView can still query a previous position before its next layout after filtering.
+            override fun getItemId(position: Int) = indices.getOrNull(position)?.toLong() ?: AdapterView.INVALID_ROW_ID
 
             override fun areAllItemsEnabled() = false
 
-            override fun isEnabled(position: Int) = !getItem(position).header
+            override fun isEnabled(position: Int) = indices.getOrNull(position)?.let { !items[it].header } == true
 
             override fun getView(position: Int, recycled: View?, parent: ViewGroup): View {
                 val row = recycled ?: inflater.inflate(
@@ -124,9 +126,9 @@ object SearchableTabChooser {
             .setView(body)
             .setNegativeButton(android.R.string.cancel, null)
             .create()
-        list.setOnItemClickListener { _, _, position, _ ->
-            val originalIndex = indices[position]
-            if (!items[originalIndex].header) {
+        list.setOnItemClickListener { _, _, position, id ->
+            val originalIndex = indices.getOrNull(position) ?: return@setOnItemClickListener
+            if (id == originalIndex.toLong() && !items[originalIndex].header) {
                 actions.onClick(dialog, originalIndex)
                 dialog.dismiss()
             }
@@ -149,7 +151,7 @@ object SearchableTabChooser {
                     indices.clear()
                     indices.addAll(visibleIndices(names, headers, s?.toString() ?: ""))
                     adapter.notifyDataSetChanged()
-                    list.setSelection(0)
+                    list.setSelection(if (indices.isEmpty()) AdapterView.INVALID_POSITION else 0)
                 }
 
                 override fun afterTextChanged(s: Editable?) = Unit
