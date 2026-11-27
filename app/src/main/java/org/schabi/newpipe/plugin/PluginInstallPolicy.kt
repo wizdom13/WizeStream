@@ -98,15 +98,20 @@ internal object PluginInstallPolicy {
         manifest: PluginManifest,
         builtIns: Map<Int, String>
     ) {
-        if (manifest.pluginId != entry.pluginId || manifest.name != entry.name ||
-            manifest.versionCode != entry.versionCode || manifest.versionName != entry.versionName ||
-            manifest.apiVersion != entry.apiVersion || manifest.host != entry.host ||
-            manifest.minHostVersionCode != entry.minHostVersionCode ||
-            manifest.minAndroidSdk != entry.minAndroidSdk ||
-            manifest.requiredCapabilities.toSet() != entry.requiredCapabilities.toSet() ||
-            (entry.author != null && manifest.author != entry.author)
-        ) {
-            throw PluginException("Package does not match repository entry")
+        val differentFields = buildList {
+            if (manifest.pluginId != entry.pluginId) add("pluginId")
+            if (manifest.name != entry.name) add("name")
+            if (manifest.versionCode != entry.versionCode) add("versionCode")
+            if (manifest.versionName != entry.versionName) add("versionName")
+            if (manifest.apiVersion != entry.apiVersion) add("apiVersion")
+            if (manifest.host != entry.host) add("host")
+            if (manifest.minHostVersionCode != entry.minHostVersionCode) add("minHostVersionCode")
+            if (manifest.minAndroidSdk != entry.minAndroidSdk) add("minAndroidSdk")
+            if (manifest.requiredCapabilities.toSet() != entry.requiredCapabilities.toSet()) add("requiredCapabilities")
+            if (entry.author != null && manifest.author != entry.author) add("author")
+        }
+        if (differentFields.isNotEmpty()) {
+            throw PluginException("Package does not match repository entry: ${differentFields.joinToString()}")
         }
         val builtIn = builtInName(manifest.pluginId, manifest.name, builtIns)
             ?: builtIns[manifest.legacyServiceId]

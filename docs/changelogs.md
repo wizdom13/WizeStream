@@ -4,6 +4,10 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Plugin import errors
+
+- Show complete, copyable plugin import errors in a Material 3 dialog, including package and catalog versions, checksum comparisons and metadata rejection details.
+
 ### YouTube channel sorting
 
 - Fix Popular and Oldest ordering on channel Videos and Live tabs when YouTube places sorting inside a dropdown beside membership filters.

@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.text.InputType
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -28,6 +29,7 @@ import org.schabi.newpipe.plugin.PluginManager
 import org.schabi.newpipe.plugin.PluginSourceResolver
 import org.schabi.newpipe.plugin.PreparedLocalPluginCatalog
 import org.schabi.newpipe.plugin.ResolvedPluginSource
+import org.schabi.newpipe.util.external_communication.ShareUtils
 
 /** Source selection and consent only. The shared installer verifies every selected package. */
 internal class PluginSourceActions(
@@ -47,10 +49,11 @@ internal class PluginSourceActions(
 ) {
     private enum class Picker { REPOSITORY, PACKAGE, COMPANION }
 
-    /** Only small document references survive recreation; package bytes never enter saved state. */
+    /** Only document references and checksums survive recreation; package bytes never enter saved state. */
     private data class Request(
         val picker: Picker,
         val packageUri: Uri? = null,
+        val initialPackageSha256: String? = null,
         val source: String? = null,
         val pluginId: String? = null,
         val sha256: String? = null,
@@ -63,7 +66,7 @@ internal class PluginSourceActions(
         val label: String
     )
 
-    private data class LocalInspection(val packageUri: Uri, val choices: List<LocalChoice>)
+    private data class LocalInspection(val packageUri: Uri, val sha256: String, val choices: List<LocalChoice>)
 
     private val work = CompositeDisposable()
     private val dialogs = mutableSetOf<AlertDialog>()
@@ -102,6 +105,7 @@ internal class PluginSourceActions(
                 Bundle().apply {
                     putString("picker", it.picker.name)
                     putString("package", it.packageUri?.toString())
+                    putString("package_hash", it.initialPackageSha256)
                     putString("source", it.source)
                     putString("plugin", it.pluginId)
                     putString("hash", it.sha256)
@@ -117,6 +121,7 @@ internal class PluginSourceActions(
         request = Request(
             picker,
             state.getString("package")?.let(Uri::parse),
+            state.getString("package_hash"),
             state.getString("source"),
             state.getString("plugin"),
             state.getString("hash"),
@@ -239,7 +244,7 @@ internal class PluginSourceActions(
         } catch (error: Exception) {
             request = null
             onBusyChanged()
-            message(fragment.getString(R.string.plugins_file_picker_failed, error.message ?: error.javaClass.simpleName))
+            showError(fragment.getString(R.string.plugins_file_picker_failed, error.message ?: error.javaClass.simpleName))
         }
     }
 
@@ -271,17 +276,21 @@ internal class PluginSourceActions(
                     val catalog = catalogUri?.let { uri ->
                         openInput(uri).use { PluginManager.prepareLocalCatalog(it, displayName(uri)) }
                     }
+                    val selectedRepository = if (catalog == null && selected.source != null) {
+                        PluginManager.fetchRepository(context, selected.source)
+                    } else {
+                        null
+                    }
                     val choices = when {
                         catalog != null -> catalog.entries.filter(prepared::matches).map {
                             LocalChoice(catalog.source, it, "${catalog.name}\n$fileName")
                         }
 
-                        selected.source != null -> {
-                            val repository = PluginManager.fetchRepository(context, selected.source)
-                            repository.plugins.filter {
+                        selectedRepository != null -> {
+                            selectedRepository.plugins.filter {
                                 it.pluginId == selected.pluginId && it.sha256 == selected.sha256 &&
                                     it.publicKey == selected.publicKey && prepared.matches(it)
-                            }.map { LocalChoice(selected.source, it, "${repository.name}\n$fileName") }
+                            }.map { LocalChoice(selected.source!!, it, "${selectedRepository.name}\n$fileName") }
                         }
 
                         else -> repositories.flatMap { (source, result) ->
@@ -294,9 +303,18 @@ internal class PluginSourceActions(
                         }
                     }.distinctBy { listOf(it.entry.pluginId, it.entry.sha256, it.entry.publicKey) }
                     if (choices.isEmpty() && (catalog != null || selected.source != null)) {
-                        throw PluginException(context.getString(R.string.plugins_local_catalog_mismatch))
+                        throw PluginException(
+                            PluginImportDiagnostics.catalogMismatch(
+                                context,
+                                prepared,
+                                fileName,
+                                catalogUri?.let(::displayName) ?: selectedRepository!!.name,
+                                catalog?.entries ?: selectedRepository!!.plugins,
+                                selected.initialPackageSha256
+                            )
+                        )
                     }
-                    LocalInspection(packageUri, choices)
+                    LocalInspection(packageUri, prepared.sha256, choices)
                 }
             }
         }) { inspection ->
@@ -307,7 +325,9 @@ internal class PluginSourceActions(
                         .setMessage(R.string.plugins_choose_companion_message)
                         .setNegativeButton(R.string.cancel, null)
                         .setPositiveButton(R.string.plugins_choose_index) { _, _ ->
-                            if (canAct()) launch(Request(Picker.COMPANION, packageUri = packageUri))
+                            if (canAct()) {
+                                launch(Request(Picker.COMPANION, packageUri = packageUri, initialPackageSha256 = inspection.sha256))
+                            }
                         }
                         .create()
                 )
@@ -351,7 +371,7 @@ internal class PluginSourceActions(
     private fun <T> choose(title: String, items: List<T>, label: (T) -> String, accept: (T) -> Unit) {
         if (!canAct()) return
         when (items.size) {
-            0 -> message(fragment.getString(R.string.plugins_source_no_plugins))
+            0 -> showError(fragment.getString(R.string.plugins_source_no_plugins))
 
             1 -> accept(items.single())
 
@@ -385,7 +405,7 @@ internal class PluginSourceActions(
                     working = false
                     if (canAct()) {
                         onBusyChanged()
-                        message(fragment.getString(R.string.plugins_source_failed, error.message ?: error.javaClass.simpleName))
+                        showError(fragment.getString(R.string.plugins_source_failed, error.message ?: error.javaClass.simpleName))
                     }
                 })
         )
@@ -414,6 +434,25 @@ internal class PluginSourceActions(
         dialogs += dialog
         dialog.setOnDismissListener { dialogs -= dialog }
         dialog.show()
+    }
+
+    fun showError(message: String) {
+        if (!fragment.isAdded || fragment.view == null) return
+        val context = fragment.requireContext()
+        val details = "$message\n\n${PluginImportDiagnostics.environment(context)}"
+        val dialog = MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.plugins_error_title)
+            .setMessage(details)
+            .setPositiveButton(R.string.ok, null)
+            .setNeutralButton(R.string.plugins_error_copy, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.findViewById<TextView>(android.R.id.message)?.setTextIsSelectable(true)
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                ShareUtils.copyToClipboard(context, details)
+            }
+        }
+        show(dialog)
     }
 
     private fun message(text: String) {

@@ -7,10 +7,12 @@ package org.schabi.newpipe.settings
 import android.app.Activity
 import android.app.Application
 import android.content.ActivityNotFoundException
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.view.LayoutInflater
@@ -59,6 +61,7 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
+import org.schabi.newpipe.BuildConfig
 import org.schabi.newpipe.R
 import org.schabi.newpipe.extractor.plugin.PluginRepository
 import org.schabi.newpipe.plugin.PluginManager
@@ -304,14 +307,158 @@ class PluginSourceActionsTest {
         returnDocument(nextPicker(), PACKAGE_URI)
         drain()
         assertFalse(actions.isBusy)
-        assertTrue(ShadowToast.getTextOfLatestToast().toString().contains("Document permission expired"))
+        val error = latestDialog()
+        assertTrue(message(error).contains("Document permission expired"))
         assertTrue(fixture.localInstalls.isEmpty())
         assertEquals(listOf(PluginManager.BUILTIN_REPOSITORY), PluginManager.getRepositories(context))
+        click(error, AlertDialog.BUTTON_POSITIVE)
+        assertFalse(error.isShowing)
+
+        fixture.openFailure = null
+        actions.chooseLocalPackage()
+        returnDocument(nextPicker(), PACKAGE_URI)
+        drain()
+        assertEquals(context.getString(R.string.plugins_choose_companion_message), message(latestDialog()))
+        click(latestDialog(), AlertDialog.BUTTON_NEGATIVE)
+        assertFalse(actions.isBusy)
 
         activity.launchFailure = ActivityNotFoundException("No document picker")
         actions.chooseLocalPackage()
         assertFalse(actions.isBusy)
-        assertTrue(ShadowToast.getTextOfLatestToast().toString().contains("No document picker"))
+        assertTrue(message(latestDialog()).contains("No document picker"))
+    }
+
+    @Test
+    fun aFileFailureShowsCompleteSelectableDetailsAndCopiesThemWithoutDismissing() {
+        val detail = (1..24).joinToString("\n") { "Import detail $it: the selected document could not be opened." } +
+            "\nComplete final line"
+        fixture.openFailure = IllegalStateException(detail)
+        actions.chooseLocalPackage()
+        returnDocument(nextPicker(), PACKAGE_URI)
+        drain()
+
+        val error = latestDialog()
+        val expected = context.getString(R.string.plugins_source_failed, detail) + "\n\n" +
+            context.getString(
+                R.string.plugins_error_environment,
+                BuildConfig.VERSION_NAME,
+                BuildConfig.VERSION_CODE,
+                Build.VERSION.SDK_INT
+            )
+        assertEquals(expected, message(error))
+        assertTrue(error.findViewById<TextView>(android.R.id.message)!!.isTextSelectable)
+        assertEquals(context.getString(R.string.plugins_error_copy), error.getButton(AlertDialog.BUTTON_NEUTRAL).text.toString())
+        click(error, AlertDialog.BUTTON_NEUTRAL)
+
+        val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        assertEquals(expected, clipboard.primaryClip!!.getItemAt(0).text.toString())
+        assertTrue(error.isShowing)
+        assertFalse(actions.isBusy)
+        assertTrue(fixture.localInstalls.isEmpty())
+        click(error, AlertDialog.BUTTON_POSITIVE)
+        assertFalse(error.isShowing)
+    }
+
+    @Test
+    fun destroyingTheViewDismissesAnImportError() {
+        fixture.openFailure = SecurityException("Document permission expired")
+        actions.chooseLocalPackage()
+        returnDocument(nextPicker(), PACKAGE_URI)
+        drain()
+        val error = latestDialog()
+        val owner = fragment
+
+        activity.supportFragmentManager.beginTransaction().detach(owner).commitNow()
+
+        assertFalse(error.isShowing)
+        assertFalse(owner.actions.isBusy)
+        assertTrue(fixture.localInstalls.isEmpty())
+    }
+
+    @Test
+    fun mismatchedCompanionReportsActualAndExpectedVersionsAndChecksums() {
+        val newer = signedFixture(versionCode = 2, versionName = "1.1")
+        fixture.documents[PACKAGE_URI] = newer.bytes
+        val actual = newer.repository().plugins.single()
+        val expected = fixture.signed.repository().plugins.single()
+        actions.chooseLocalPackage()
+        returnDocument(nextPicker(), PACKAGE_URI)
+        drain()
+        click(latestDialog(), AlertDialog.BUTTON_POSITIVE)
+        returnDocument(nextPicker(), CATALOG_URI)
+        drain()
+
+        val report = message(latestDialog())
+        val catalogLabel = context.getString(R.string.plugins_error_catalog, "index.json")
+        assertTrue(report.contains(context.getString(R.string.plugins_local_catalog_mismatch)))
+        assertTrue(report.contains(context.getString(R.string.plugins_error_package, "fixture.ppp")))
+        assertTrue(report.contains(catalogLabel))
+        val packageDetails = report.substringBefore(catalogLabel)
+        val catalogDetails = report.substringAfter(catalogLabel)
+        assertTrue(packageDetails.contains(context.getString(R.string.plugins_error_identity, PLUGIN_ID, "1.1", 2)))
+        assertTrue(packageDetails.contains(context.getString(R.string.plugins_error_checksum, actual.sha256)))
+        assertTrue(catalogDetails.contains(context.getString(R.string.plugins_error_identity, PLUGIN_ID, "1.0", 1)))
+        assertTrue(catalogDetails.contains(context.getString(R.string.plugins_error_checksum, expected.sha256)))
+        assertTrue(catalogDetails.contains(context.getString(R.string.plugins_error_checksum_differs)))
+        assertTrue(catalogDetails.contains("versionCode"))
+        assertTrue(catalogDetails.contains("versionName"))
+        assertFalse(report.contains(context.getString(R.string.plugins_error_package_changed, actual.sha256)))
+        assertFalse(report.contains(PACKAGE_URI.toString()))
+        assertFalse(report.contains(CATALOG_URI.toString()))
+        assertTrue(fixture.localInstalls.isEmpty())
+        assertFalse(actions.isBusy)
+    }
+
+    @Test
+    fun changedPackageReportsItsInitialChecksumAfterCompanionPickerRecreation() {
+        val initialSha256 = fixture.signed.repository().plugins.single().sha256
+        actions.chooseLocalPackage()
+        returnDocument(nextPicker(), PACKAGE_URI)
+        drain()
+        click(latestDialog(), AlertDialog.BUTTON_POSITIVE)
+        val request = nextPicker()
+        val oldFragment = fragment
+        controller.recreate()
+        assertNotSame(oldFragment, fragment)
+        assertTrue(actions.isBusy)
+
+        val changed = signedFixture(versionCode = 2, versionName = "1.1")
+        fixture.documents[PACKAGE_URI] = changed.bytes
+        returnDocument(request, CATALOG_URI)
+        drain()
+
+        val report = message(latestDialog())
+        val changedSha256 = changed.repository().plugins.single().sha256
+        assertTrue(report.contains(context.getString(R.string.plugins_error_package_changed, initialSha256)))
+        assertTrue(report.contains(context.getString(R.string.plugins_error_checksum, changedSha256)))
+        assertTrue(report.contains(context.getString(R.string.plugins_error_identity, PLUGIN_ID, "1.1", 2)))
+        assertTrue(report.contains(context.getString(R.string.plugins_error_identity, PLUGIN_ID, "1.0", 1)))
+        assertEquals(2, fixture.opened.count { it == PACKAGE_URI })
+        assertEquals(1, fixture.opened.count { it == CATALOG_URI })
+        assertTrue(fixture.localInstalls.isEmpty())
+        assertFalse(actions.isBusy)
+    }
+
+    @Test
+    fun hiddenCompanionEntriesShowAnErrorBeforeConfirmation() {
+        val hidden = signedFixture(nsfw = true)
+        fixture.documents[PACKAGE_URI] = hidden.bytes
+        fixture.documents[CATALOG_URI] = hidden.catalog.toByteArray()
+        preferences.edit().putBoolean(context.getString(R.string.plugins_show_nsfw_key), false).commit()
+        actions.chooseLocalPackage()
+        returnDocument(nextPicker(), PACKAGE_URI)
+        drain()
+        click(latestDialog(), AlertDialog.BUTTON_POSITIVE)
+        returnDocument(nextPicker(), CATALOG_URI)
+        drain()
+
+        val error = latestDialog()
+        assertTrue(message(error).startsWith(context.getString(R.string.plugins_source_no_plugins)))
+        assertEquals(context.getString(R.string.plugins_error_copy), error.getButton(AlertDialog.BUTTON_NEUTRAL).text.toString())
+        assertTrue(fixture.localInstalls.isEmpty())
+        assertFalse(actions.isBusy)
+        click(error, AlertDialog.BUTTON_POSITIVE)
+        assertFalse(error.isShowing)
     }
 
     @Test
@@ -566,7 +713,7 @@ class PluginSourceActionsTest {
         val localInstalls = mutableListOf<Install>()
         var repositories: Map<String, Result<PluginRepository>> = emptyMap()
         var resolve: (String) -> List<ResolvedPluginSource> = { listOf(ResolvedPluginSource(signed.repository(it))) }
-        val documents = mapOf(CATALOG_URI to signed.catalog.toByteArray(), PACKAGE_URI to signed.bytes)
+        val documents = mutableMapOf(CATALOG_URI to signed.catalog.toByteArray(), PACKAGE_URI to signed.bytes)
     }
 
     private data class SignedFixture(val bytes: ByteArray, val catalog: String) {
@@ -574,13 +721,13 @@ class PluginSourceActionsTest {
     }
 
     /** Authentic digest/signature metadata; this fixture's placeholder DEX is never executed. */
-    private fun signedFixture(): SignedFixture {
+    private fun signedFixture(versionCode: Int = 1, versionName: String = "1.0", nsfw: Boolean = false): SignedFixture {
         val manifest = JsonObject().apply {
             put("pluginId", PLUGIN_ID)
             put("name", "Fixture plugin")
             put("author", CATALOG_NAME)
-            put("versionCode", 1)
-            put("versionName", "1.0")
+            put("versionCode", versionCode)
+            put("versionName", versionName)
             put("apiVersion", "1.0")
             put("entryClass", "org.example.FixturePlugin")
         }
@@ -607,6 +754,7 @@ class PluginSourceActionsTest {
             put("sha256", Hex.toHexString(digest))
             put("signature", signature)
             put("publicKey", Base64.toBase64String(key.generatePublicKey().encoded))
+            put("nsfw", nsfw)
         }
         val catalog = JsonWriter.string(
             JsonObject().apply {
