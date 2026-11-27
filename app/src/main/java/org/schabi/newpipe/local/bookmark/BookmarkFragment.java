@@ -108,6 +108,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     private java.util.Set<String> learningSources = Collections.emptySet();
     private static final String LEARNING_CATEGORY = PlaylistOpeningPreferences.LEARNING_CATEGORY;
     private PlaylistCategories categories = new PlaylistCategories();
+    private final BookmarkCategoryRefresh categoryRefresh = new BookmarkCategoryRefresh();
     @State
     public String selectedCategory = PlaylistCategories.ALL;
     @State
@@ -204,7 +205,9 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         super.onResume();
         if (activity != null) {
             setTitle(activity.getString(R.string.tab_bookmarks));
-            refreshCategories();
+            categoryRefresh.refresh(requireContext(), categoryProfileId, itemsList,
+                    this::refreshCategories,
+                    () -> itemsListState = null);
             PlaylistOpeningPreferences.rememberCategory(requireContext(),
                     categoryProfileId, selectedCategory);
         }
@@ -216,7 +219,8 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         super.onSharedPreferenceChanged(sharedPreferences, key);
         if (categoryProfileId != null && PlaylistOpeningPreferences.affectsCategories(
                 requireContext(), categoryProfileId, key)) {
-            refreshCategories();
+            categoryRefresh.refresh(requireContext(), categoryProfileId, itemsList,
+                    this::refreshCategories);
         }
     }
 
@@ -241,6 +245,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
     @Override
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
+        categoryRefresh.invalidate();
         selectedCategory = PlaylistOpeningPreferences.validateSelection(requireContext(),
                 categoryProfileId, categories, selectedCategory);
         rootView.findViewById(R.id.playlist_category_filter)
@@ -380,11 +385,13 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
         itemsListState = itemsList.getLayoutManager().onSaveInstanceState();
 
         // Save on exit
+        captureCanonicalOrderFromAdapter();
         saveImmediate();
     }
 
     @Override
     public void onDestroyView() {
+        categoryRefresh.invalidate();
         if (selectionController != null) {
             selectionController.close();
             selectionController = null;
@@ -564,6 +571,7 @@ public final class BookmarkFragment extends BaseLocalListFragment<List<PlaylistL
 
     @Override
     protected void resetFragment() {
+        categoryRefresh.invalidate();
         super.resetFragment();
         if (disposables != null) {
             disposables.clear();
