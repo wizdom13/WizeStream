@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/liveChatSaved"
+        android:title="@string/live_chat_saved_open" />
+    <item
+        android:id="@+id/liveChatDanmaku"
+        android:title="@string/live_chat_use_danmaku" />
+</menu>
