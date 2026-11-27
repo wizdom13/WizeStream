@@ -12,6 +12,10 @@ Release history is listed newest first. The number beside each release is its An
 
 - Fix Popular and Oldest ordering on channel Videos and Live tabs when YouTube places sorting inside a dropdown beside membership filters.
 
+### Update storage
+
+- Remove obsolete in-app update APKs in the background after a grace period, while keeping newer pending updates and files needed by active downloads or the Android installer.
+
 ## WizeStream 1.53.0 (`1053000`)
 
 ### Retained subscription alerts

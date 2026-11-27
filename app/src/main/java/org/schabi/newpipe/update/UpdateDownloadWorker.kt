@@ -51,7 +51,7 @@ class UpdateDownloadWorker(
             return failure(applicationContext.getString(R.string.app_update_download_failed))
         }
 
-        val updateDir = File(applicationContext.cacheDir, UPDATE_CACHE_DIR)
+        val updateDir = File(applicationContext.cacheDir, UpdateCacheCleanup.DIRECTORY)
         if (!updateDir.exists() && !updateDir.mkdirs()) {
             return failure(applicationContext.getString(R.string.app_update_download_failed))
         }
@@ -125,7 +125,6 @@ class UpdateDownloadWorker(
     }
 
     companion object {
-        private const val UPDATE_CACHE_DIR = "update"
         private const val NOTIFICATION_ID = 2001
         private const val UNKNOWN_PROGRESS = -1
         const val INPUT_APK_URL = "apkUrl"
@@ -163,6 +162,7 @@ class UpdateDownloadWorker(
                 )
                 .build()
             WorkManager.getInstance(context).enqueue(request)
+            UpdateCacheCleanup.schedule(context)
             return request.id
         }
 
