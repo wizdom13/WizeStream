@@ -225,8 +225,9 @@ public final class VideoDetailFragment
     private int lastAppBarVerticalOffset = Integer.MAX_VALUE; // prevents useless updates
     @Nullable
     private StreamInfo currentInfo = null;
+    @State
     @Nullable
-    private PlayQueueItem currentLocalItem = null;
+    protected PlayQueueItem currentLocalItem = null;
     private FragmentVideoDetailBinding binding;
     private org.schabi.newpipe.sponsorblock.FullVideoLabelBadge sponsorshipBadge;
     private NavigationBarView detailNavigation;
@@ -1474,8 +1475,8 @@ public final class VideoDetailFragment
             return;
         }
 
-        if (currentLocalItem != null) {
-            prepareAndHandleLocalMedia(currentLocalItem, false);
+        if (DirectMediaDetailState.load(this, currentLocalItem,
+                currentWorker, isLoading, binding)) {
             return;
         }
 
@@ -1503,8 +1504,8 @@ public final class VideoDetailFragment
         setInitialData(newServiceId, newUrl, newTitle, newQueue);
         if (currentLocalItem != null) {
             prepareAndHandleLocalMedia(currentLocalItem, true);
-            if (stack.isEmpty() || !stack.peek().getPlayQueue().equalStreams(newQueue)) {
-                stack.push(new StackItem(newServiceId, newUrl, newTitle, newQueue));
+            if (stack.isEmpty() || !stack.peek().getPlayQueue().equalStreams(playQueue)) {
+                stack.push(new StackItem(newServiceId, newUrl, newTitle, playQueue));
             }
             if (isAutoplayEnabled() || forceFullscreen) {
                 openVideoPlayerAutoFullscreen();
@@ -1547,8 +1548,8 @@ public final class VideoDetailFragment
 
     }
 
-    private void prepareAndHandleLocalMedia(@NonNull final PlayQueueItem item,
-                                            final boolean scrollToTop) {
+    void prepareAndHandleLocalMedia(@NonNull final PlayQueueItem item,
+                                    final boolean scrollToTop) {
         if (item.isLiveTv()) {
             prepareAndHandleLiveTv(item);
             return;
@@ -1729,6 +1730,10 @@ public final class VideoDetailFragment
 
     @Override
     public void startLoading(final boolean forceLoad) {
+        if (DirectMediaDetailState.load(this, currentLocalItem,
+                currentWorker, isLoading, binding)) {
+            return;
+        }
         super.startLoading(forceLoad);
 
         initTabs();
@@ -1742,6 +1747,10 @@ public final class VideoDetailFragment
     }
 
     private void startLoading(final boolean forceLoad, final boolean addToBackStack) {
+        if (DirectMediaDetailState.load(this, currentLocalItem,
+                currentWorker, isLoading, binding)) {
+            return;
+        }
         super.startLoading(forceLoad);
 
         initTabs();
@@ -1755,6 +1764,10 @@ public final class VideoDetailFragment
     }
 
     private void runWorker(final boolean forceLoad, final boolean addToBackStack) {
+        if (DirectMediaDetailState.load(this, currentLocalItem,
+                currentWorker, isLoading, binding)) {
+            return;
+        }
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         currentWorker = org.schabi.newpipe.download.DownloadedCopyRepository.streamInfoOrNetwork(
                         requireContext(), serviceId, url, title,
@@ -2767,16 +2780,17 @@ public final class VideoDetailFragment
         this.serviceId = newServiceId;
         this.url = newUrl;
         this.title = newTitle;
-        this.playQueue = newPlayQueue;
+        this.playQueue = org.schabi.newpipe.util.DirectMediaNavigation.resolveQueue(
+                newServiceId, newUrl, newTitle, newPlayQueue, currentLocalItem);
         pendingLearningQueue = newPlayQueue != null
                 && newPlayQueue.getLearningPlaylistContext() != null ? newPlayQueue : null;
         if (newUrl != null) {
             playerDismissed = false;
         }
-        learningQueueChanges.onNext(Optional.ofNullable(newPlayQueue));
-        final PlayQueueItem queueItem = newPlayQueue == null ? null : newPlayQueue.getItem();
-        currentLocalItem = queueItem != null && queueItem.isDirectMedia()
-                ? queueItem : null;
+        learningQueueChanges.onNext(Optional.ofNullable(playQueue));
+        currentLocalItem = org.schabi.newpipe.util.DirectMediaNavigation.item(
+                newServiceId, newUrl, playQueue);
+        DirectMediaDetailState.updateSheet(binding, bottomSheetBehavior, isRadioQueue());
     }
 
     private void setErrorImage(final int imageResource) {
@@ -2816,7 +2830,8 @@ public final class VideoDetailFragment
             public void onReceive(final Context context, final Intent intent) {
                 switch (intent.getAction()) {
                     case ACTION_SHOW_MAIN_PLAYER:
-                        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                        bottomSheetBehavior.setState(DirectMediaDetailState.sheetState(
+                                BottomSheetBehavior.STATE_EXPANDED, isRadioQueue()));
                         break;
                     case ACTION_HIDE_MAIN_PLAYER:
                         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
@@ -3255,7 +3270,7 @@ public final class VideoDetailFragment
         playQueue = queue;
         learningQueueChanges.onNext(Optional.of(queue));
         final PlayQueueItem queueItem = queue.getItem();
-        final boolean radio = isRadioQueue();
+        final boolean radio = DirectMediaDetailState.isRadio(queue);
         if (binding != null && bottomSheetBehavior != null) {
             bottomSheetBehavior.setDraggable(!radio);
             if (radio && bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
@@ -3264,9 +3279,7 @@ public final class VideoDetailFragment
             setOverlayExpansionClickable(
                     bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED);
         }
-        if (queueItem != null && queueItem.isDirectMedia()
-                && binding != null
-                && (currentLocalItem == null || !currentLocalItem.isSameItem(queueItem))) {
+        if (binding != null && DirectMediaDetailState.needsRefresh(currentLocalItem, queueItem)) {
             setInitialData(queueItem.getServiceId(), queueItem.getUrl(),
                     queueItem.getTitle(), queue);
             prepareAndHandleLocalMedia(queueItem, true);
@@ -4110,8 +4123,11 @@ public final class VideoDetailFragment
 
         final FrameLayout bottomSheetLayout = activity.findViewById(R.id.fragment_player_holder);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
-        bottomSheetBehavior.setState(lastStableBottomSheetState);
-        updateBottomSheetState(lastStableBottomSheetState);
+        bottomSheetBehavior.setState(DirectMediaDetailState.sheetState(
+                lastStableBottomSheetState, isRadioQueue()));
+        updateBottomSheetState(DirectMediaDetailState.sheetState(
+                lastStableBottomSheetState, isRadioQueue()));
+        DirectMediaDetailState.updateSheet(binding, bottomSheetBehavior, isRadioQueue());
         if (miniPlayerCorners != null) {
             miniPlayerCorners.release();
         }
@@ -4413,8 +4429,7 @@ public final class VideoDetailFragment
     }
 
     private boolean isRadioQueue() {
-        final PlayQueueItem item = playQueue == null ? null : playQueue.getItem();
-        return item != null && item.isRadio();
+        return DirectMediaDetailState.isRadio(serviceId, url, playQueue);
     }
 
     private void setOverlayExpansionClickable(final boolean enable) {

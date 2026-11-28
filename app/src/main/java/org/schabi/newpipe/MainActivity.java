@@ -1546,7 +1546,9 @@ public class MainActivity extends AppCompatActivity {
                                 VideoDetailFragment.KEY_SWITCHING_PLAYERS, false);
                         NavigationHelper.openVideoDetailFragment(
                                 getApplicationContext(), getSupportFragmentManager(),
-                                serviceId, url, title, playQueue, switchingPlayers);
+                                serviceId, url, title,
+                                org.schabi.newpipe.util.DirectMediaNavigation.restoreFromIntent(
+                                        intent, playQueue), switchingPlayers);
                         break;
                     case CHANNEL:
                         NavigationHelper.openChannelFragment(getSupportFragmentManager(),
