@@ -11,8 +11,6 @@ import android.widget.EditText;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
-import com.google.android.material.appbar.CollapsingToolbarLayout;
-import com.google.android.material.appbar.AppBarLayout;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -74,8 +72,6 @@ public class SettingsActivity extends AppCompatActivity implements
             "org.schabi.newpipe.settings.OPEN_PLUGIN_SETTINGS";
     private static final String SEARCH_TEXT = "settings_search_text";
     private static final String TWO_PANE = "settings_two_pane";
-    private AppBarLayout settingsAppBar;
-    private CollapsingToolbarLayout settingsCollapsingToolbar;
     private CharSequence sectionTitle = "";
 
     private boolean twoPane;
@@ -111,8 +107,6 @@ public class SettingsActivity extends AppCompatActivity implements
 
         final SettingsLayoutBinding binding = SettingsLayoutBinding.inflate(getLayoutInflater());
         settingsRoot = binding.getRoot();
-        settingsAppBar = binding.settingsAppBar;
-        settingsCollapsingToolbar = binding.settingsCollapsingToolbar;
         setContentView(settingsRoot);
         twoPane = getResources().getBoolean(R.bool.use_two_pane_settings);
         binding.settingsNavigationHolder.setVisibility(twoPane ? View.VISIBLE : View.GONE);
@@ -121,8 +115,7 @@ public class SettingsActivity extends AppCompatActivity implements
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
-            // The shared collapsing toolbar draws both the expanded and compact title.
-            actionBar.setDisplayShowTitleEnabled(false);
+            actionBar.setDisplayShowTitleEnabled(true);
         }
 
         if (savedInstanceState != null) {
@@ -358,29 +351,25 @@ public class SettingsActivity extends AppCompatActivity implements
     }
 
     /**
-     * Keeps the expanded and collapsed settings titles synchronized across fragments.
+     * Keeps the compact toolbar title synchronized across settings fragments.
      *
      * @param title current settings section title
      */
     public void setSettingsSectionTitle(@NonNull final CharSequence title) {
         sectionTitle = title;
-        if (!isSearchActive() && settingsCollapsingToolbar != null) {
-            settingsCollapsingToolbar.setTitle(title);
+        final ActionBar actionBar = getSupportActionBar();
+        if (!isSearchActive() && actionBar != null) {
+            actionBar.setTitle(title);
         }
     }
 
     private void updateSearchUi() {
         final boolean active = isSearchActive();
         searchContainer.setVisibility(active ? View.VISIBLE : View.GONE);
-        if (settingsCollapsingToolbar != null) {
-            settingsCollapsingToolbar.setTitle(active ? "" : sectionTitle);
-        }
-        if (active && settingsAppBar != null) {
-            settingsAppBar.setExpanded(false, false);
-        }
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setDisplayShowTitleEnabled(false);
+            actionBar.setTitle(sectionTitle);
+            actionBar.setDisplayShowTitleEnabled(!active);
         }
         invalidateOptionsMenu();
         if (active) {
