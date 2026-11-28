@@ -29,6 +29,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.schabi.newpipe.R
+import org.schabi.newpipe.extractor.Image
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem
+import org.schabi.newpipe.info_list.StreamUploaderBinding
 
 @RunWith(AndroidJUnit4::class)
 class StreamUploaderAlignmentTest {
@@ -46,7 +49,7 @@ class StreamUploaderAlignmentTest {
                 assertTextStartAligned(fixture)
                 val availableWidth = fixture.uploaderRoot.width - fixture.avatar.width - fixture.gap
                 assertTrue("${case.name}: blank row space must remain outside the channel-name target", fixture.name.width < availableWidth)
-                if (case.name in listOf("list-phone", "portrait-card-phone", "landscape-card-wide-rtl")) {
+                if (case.name in listOf("list-phone", "list-narrow-large-font", "grid-phone", "related-phone", "portrait-card-phone", "landscape-card-wide-rtl")) {
                     savePreview(fixture)
                 }
             }
@@ -95,7 +98,10 @@ class StreamUploaderAlignmentTest {
     private fun cases(): List<Case> = listOf(
         Case("list-phone", R.layout.list_stream_item, 360),
         Case("list-wide-rtl", R.layout.list_stream_item, 960, rtl = true),
-        Case("grid-phone", R.layout.list_stream_grid_item, 360),
+        Case("related-phone", R.layout.list_stream_related_wide_item, 360),
+        Case("related-wide-rtl", R.layout.list_stream_related_wide_item, 960, rtl = true),
+        Case("list-narrow-large-font", R.layout.list_stream_item, 280, fontScale = 1.8f),
+        Case("grid-phone", R.layout.list_stream_grid_item, 180),
         Case("grid-wide-rtl", R.layout.list_stream_grid_item, 960, rtl = true),
         Case("portrait-card-phone", R.layout.list_stream_card_item, 360),
         Case("portrait-card-wide-rtl", R.layout.list_stream_card_item, 960, rtl = true),
@@ -140,7 +146,18 @@ class StreamUploaderAlignmentTest {
     }
 
     private fun bindLabels(fixture: Fixture, channel: String, details: String) {
-        fixture.name.text = channel
+        val avatar = Image(
+            "android.resource://${context.packageName}/${R.drawable.placeholder_person}",
+            Image.HEIGHT_UNKNOWN,
+            Image.WIDTH_UNKNOWN,
+            Image.ResolutionLevel.UNKNOWN
+        )
+        StreamUploaderBinding.bind(
+            fixture.root,
+            ChannelInfoItem(0, "https://example.invalid/channel", channel),
+            channel,
+            listOf(avatar)
+        ) { }
         fixture.details.text = details
         fixture.root.measure(
             View.MeasureSpec.makeMeasureSpec(fixture.width, View.MeasureSpec.EXACTLY),
@@ -166,11 +183,15 @@ class StreamUploaderAlignmentTest {
             assertTrue("${case.name}: stacked labels must not overlap", name.bottom <= details.top)
         }
         assertTrue("${case.name}: name and metadata must not overlap", !Rect.intersects(name, details))
+        val target = bounds(fixture, fixture.root.findViewById(R.id.itemUploaderLink))
+        val minimum = fixture.root.resources.getDimensionPixelSize(R.dimen.stream_item_uploader_touch_target)
+        assertTrue("${case.name}: the channel target must be at least 48dp", target.width() >= minimum && target.height() >= minimum)
+        assertTrue("${case.name}: metadata must remain outside the channel target", !Rect.intersects(target, details))
     }
 
     private fun assertContained(fixture: Fixture) {
         val row = Rect(0, 0, fixture.uploaderRoot.width, fixture.uploaderRoot.height)
-        listOf(fixture.avatar, fixture.name, fixture.details).forEach { view ->
+        listOf(fixture.avatar, fixture.name, fixture.details, fixture.root.findViewById<View>(R.id.itemUploaderLink)).forEach { view ->
             val bounds = bounds(fixture, view)
             val label = view.resources.getResourceEntryName(view.id)
             assertTrue("${fixture.case.name}: $label must retain visible space", bounds.width() > 0 && bounds.height() > 0)

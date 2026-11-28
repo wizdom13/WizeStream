@@ -11,12 +11,10 @@ import androidx.core.content.ContextCompat;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.stream.model.StreamStateEntity;
 import org.schabi.newpipe.download.DownloadedBadgeBinder;
-import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.InfoItem;
-import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
 import org.schabi.newpipe.extractor.stream.StreamInfoItem;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
-import org.schabi.newpipe.info_list.StreamUploaderNavigation;
+import org.schabi.newpipe.info_list.StreamUploaderBinding;
 import org.schabi.newpipe.ktx.ViewUtils;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.AiSListContentHelper;
@@ -24,13 +22,11 @@ import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.ShortsThumbnailPolicy;
 import org.schabi.newpipe.util.MembersOnlyContentHelper;
-import org.schabi.newpipe.util.OnClickGesture;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
 import org.schabi.newpipe.views.AnimatedProgressBar;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -42,8 +38,6 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
     public final TextView itemUploaderView;
     public final TextView itemDurationView;
     public final TextView itemMembersOnlyView;
-    private final View itemUploaderRoot;
-    private final ImageView itemUploaderAvatarView;
     private final AnimatedProgressBar itemProgressView;
     private Disposable progressLoad;
     private int progressGeneration;
@@ -58,8 +52,6 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
         itemUploaderView = itemView.findViewById(R.id.itemUploaderView);
         itemDurationView = itemView.findViewById(R.id.itemDurationView);
         itemMembersOnlyView = itemView.findViewById(R.id.itemMembersOnlyView);
-        itemUploaderRoot = itemView.findViewById(R.id.itemUploaderRoot);
-        itemUploaderAvatarView = itemView.findViewById(R.id.itemUploaderAvatarView);
         itemProgressView = itemView.findViewById(R.id.itemProgressView);
         sponsorshipBadge = new org.schabi.newpipe.sponsorblock.FullVideoLabelBadge(
                 (android.widget.FrameLayout) itemThumbnailView.getParent());
@@ -134,7 +126,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
             itemMembersOnlyView.setVisibility(View.GONE);
         }
 
-        bindUploader(item);
+        StreamUploaderBinding.bind(itemView, item, itemBuilder.getOnChannelSelectedListener());
 
         if (item.getDuration() > 0) {
             itemDurationView.setText(Localization.getDurationString(item.getDuration()));
@@ -182,54 +174,6 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
                 disableLongClick();
                 break;
         }
-    }
-
-    private void bindUploader(final StreamInfoItem item) {
-        // The mini layout deliberately keeps its existing compact text-only presentation.
-        if (itemUploaderRoot == null || itemUploaderAvatarView == null) {
-            return;
-        }
-
-        final List<Image> uploaderAvatars = ExtractorImageCompat.uploaderAvatarImages(item);
-        if (uploaderAvatars.isEmpty()) {
-            CoilHelper.INSTANCE.clearAvatar(itemUploaderAvatarView);
-            itemUploaderAvatarView.setVisibility(View.GONE);
-        } else {
-            itemUploaderAvatarView.setVisibility(View.VISIBLE);
-            CoilHelper.INSTANCE.loadAvatar(itemUploaderAvatarView, uploaderAvatars);
-        }
-
-        final ChannelInfoItem channel = StreamUploaderNavigation.fromStream(item);
-        final OnClickGesture<ChannelInfoItem> listener =
-                itemBuilder.getOnChannelSelectedListener();
-        // The full-width metadata container can include blank space. Only the
-        // actual avatar and channel name should navigate away from the video.
-        itemUploaderRoot.setOnClickListener(null);
-        itemUploaderRoot.setClickable(false);
-        itemUploaderRoot.setFocusable(false);
-        itemUploaderRoot.setContentDescription(null);
-        if (channel != null && listener != null) {
-            final String description = itemBuilder.getContext().getString(
-                    R.string.open_channel, item.getUploaderName());
-            bindUploaderClick(itemUploaderView, description, view -> listener.selected(channel));
-            bindUploaderClick(itemUploaderAvatarView, description,
-                    view -> listener.selected(channel));
-            itemUploaderAvatarView.setImportantForAccessibility(
-                    View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-        } else {
-            bindUploaderClick(itemUploaderView, null, null);
-            bindUploaderClick(itemUploaderAvatarView, null, null);
-            itemUploaderAvatarView.setImportantForAccessibility(
-                    View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        }
-    }
-
-    private void bindUploaderClick(final View target, final String description,
-                                   final View.OnClickListener listener) {
-        target.setOnClickListener(listener);
-        target.setClickable(listener != null);
-        target.setFocusable(listener != null);
-        target.setContentDescription(description);
     }
 
     @Override
@@ -302,6 +246,7 @@ public class StreamMiniInfoItemHolder extends InfoItemHolder {
 
     @Override
     public void recycle() {
+        StreamUploaderBinding.clear(itemView);
         sponsorshipBadge.clear();
         cancelProgressLoad();
         itemProgressView.setVisibility(View.GONE);
