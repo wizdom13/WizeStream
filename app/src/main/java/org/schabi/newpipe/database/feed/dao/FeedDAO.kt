@@ -46,7 +46,9 @@ abstract class FeedDAO {
 
     /**
      * Publication ordering prioritizes source-dated items before applying the 500-item limit.
-     * Synthetic first-seen timestamps must not displace published videos from the result.
+     * Undated uploads and synthetic first-seen timestamps must not displace published videos.
+     * Undated live/upcoming entries retain their existing priority. Ordinary undated uploads
+     * use membership discovery order without assigning a publication date to the stream.
      * View-count ordering also runs before pagination and treats every missing/negative count
      * as unknown, after real counts (including zero), with the existing order breaking ties.
      *
@@ -142,10 +144,19 @@ abstract class FeedDAO {
             CASE WHEN :sortByViews AND s.view_count >= 0 THEN s.view_count ELSE 0 END DESC,
             CASE WHEN :sortByDiscovery THEN MIN(f.first_discovered_at) ELSE 0 END DESC,
             CASE WHEN NOT :sortByDiscovery
-                AND s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
-                AND s.is_upload_date_approximation = 1
-                AND TRIM(COALESCE(s.textual_upload_date, ''), CHAR(9, 10, 11, 12, 13, 32)) = ''
+                AND (
+                    (s.service_id = ${SubscriptionEntity.YOUTUBE_SERVICE_ID}
+                        AND s.is_upload_date_approximation = 1
+                        AND TRIM(COALESCE(s.textual_upload_date, ''), CHAR(9, 10, 11, 12, 13, 32)) = '')
+                    OR (s.upload_date IS NULL
+                        AND s.stream_type IN ('VIDEO_STREAM', 'AUDIO_STREAM')
+                        AND COALESCE(s.upcoming_status, 0) = 0)
+                )
                 THEN 1 ELSE 0 END ASC,
+            CASE WHEN NOT :sortByDiscovery AND s.upload_date IS NULL
+                AND s.stream_type IN ('VIDEO_STREAM', 'AUDIO_STREAM')
+                AND COALESCE(s.upcoming_status, 0) = 0
+                THEN MIN(f.first_discovered_at) ELSE 0 END DESC,
             s.upload_date IS NULL DESC, s.upload_date DESC, s.uploader ASC, s.uid DESC
         LIMIT :limit OFFSET :offset
         """
@@ -195,29 +206,39 @@ abstract class FeedDAO {
     ).firstElement()
 
     /**
-     * Remove links to streams that are older than the given date
-     * **but keep at least one stream per uploader**.
+     * Remove expired memberships, keeping the latest known timestamp per subscription.
      *
-     * One stream per uploader is kept because it is needed as reference
-     * when fetching new streams to check if they are new or not.
+     * Undated ordinary uploads expire by their membership's first discovery time. Their source
+     * date stays unknown; undated live/upcoming entries do not expire through this query.
+     * The latest timestamp (including ties) remains as the channel's refresh reference.
+     * Correlating the outer membership prevents a shared stream's older subscription from
+     * removing its membership in another subscription or profile.
      * @param offsetDateTime the newest date to keep, older streams are removed
      */
     @Query(
         """
         DELETE FROM feed
-        WHERE feed.stream_id IN (SELECT uid from (
-              SELECT s.uid,
-              (SELECT MAX(upload_date)
-                    FROM streams s1
-                    INNER JOIN feed f1
-                    ON s1.uid = f1.stream_id
-                    WHERE f1.subscription_id = f.subscription_id) max_upload_date
-              FROM streams s
-              INNER JOIN feed f
-              ON s.uid = f.stream_id
-        
-              WHERE s.upload_date < :offsetDateTime
-              AND   s.upload_date <> max_upload_date))
+        WHERE EXISTS (
+            SELECT 1 FROM streams s
+            WHERE s.uid = feed.stream_id
+            AND COALESCE(s.upload_date, CASE
+                WHEN s.stream_type IN ('VIDEO_STREAM', 'AUDIO_STREAM')
+                    AND COALESCE(s.upcoming_status, 0) = 0
+                THEN feed.first_discovered_at END) < :offsetDateTime
+            AND EXISTS (
+                SELECT 1 FROM streams s1
+                INNER JOIN feed f1 ON s1.uid = f1.stream_id
+                WHERE f1.subscription_id = feed.subscription_id
+                AND COALESCE(s1.upload_date, CASE
+                    WHEN s1.stream_type IN ('VIDEO_STREAM', 'AUDIO_STREAM')
+                        AND COALESCE(s1.upcoming_status, 0) = 0
+                    THEN f1.first_discovered_at END) >
+                    COALESCE(s.upload_date, CASE
+                        WHEN s.stream_type IN ('VIDEO_STREAM', 'AUDIO_STREAM')
+                            AND COALESCE(s.upcoming_status, 0) = 0
+                        THEN feed.first_discovered_at END)
+            )
+        )
         """
     )
     abstract fun unlinkStreamsOlderThan(offsetDateTime: OffsetDateTime)
@@ -228,22 +249,27 @@ abstract class FeedDAO {
         WHERE feed.subscription_id IN (
             SELECT uid FROM subscriptions WHERE profile_id = :profileId
         )
-        AND feed.stream_id IN (SELECT uid FROM (
-            SELECT s.uid,
-            (
-                SELECT MAX(upload_date)
-                FROM streams s1
+        AND EXISTS (
+            SELECT 1 FROM streams s
+            WHERE s.uid = feed.stream_id
+            AND COALESCE(s.upload_date, CASE
+                WHEN s.stream_type IN ('VIDEO_STREAM', 'AUDIO_STREAM')
+                    AND COALESCE(s.upcoming_status, 0) = 0
+                THEN feed.first_discovered_at END) < :offsetDateTime
+            AND EXISTS (
+                SELECT 1 FROM streams s1
                 INNER JOIN feed f1 ON s1.uid = f1.stream_id
-                WHERE f1.subscription_id = f.subscription_id
-            ) max_upload_date
-            FROM streams s
-            INNER JOIN feed f ON s.uid = f.stream_id
-            WHERE f.subscription_id IN (
-                SELECT uid FROM subscriptions WHERE profile_id = :profileId
+                WHERE f1.subscription_id = feed.subscription_id
+                AND COALESCE(s1.upload_date, CASE
+                    WHEN s1.stream_type IN ('VIDEO_STREAM', 'AUDIO_STREAM')
+                        AND COALESCE(s1.upcoming_status, 0) = 0
+                    THEN f1.first_discovered_at END) >
+                    COALESCE(s.upload_date, CASE
+                        WHEN s.stream_type IN ('VIDEO_STREAM', 'AUDIO_STREAM')
+                            AND COALESCE(s.upcoming_status, 0) = 0
+                        THEN feed.first_discovered_at END)
             )
-            AND s.upload_date < :offsetDateTime
-            AND s.upload_date <> max_upload_date
-        ))
+        )
         """
     )
     abstract fun unlinkStreamsOlderThanForProfile(

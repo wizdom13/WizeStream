@@ -10,6 +10,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -190,6 +191,148 @@ class FeedDAOTest {
         feedDAO.insert(FeedEntity(2, 1, firstDiscoveredAt = 300))
         assertEquals(listOf(1L, 2L), ids(true))
         assertEquals(100L, feedDAO.getMemberships(1).single { it.streamId == 2L }.firstDiscoveredAt)
+    }
+
+    @Test
+    fun undatedPluginUploadsSortAfterPublishedItemsAndKeepLiveAndUpcomingPriority() {
+        val pluginId = ServiceList.FIRST_DYNAMIC_PLUGIN_ID + 17
+        subscriptionDAO.insert(SubscriptionEntity(uid = 1, serviceId = pluginId, url = "https://example.com/creator", name = "Creator"))
+        val published = OffsetDateTime.parse("2026-11-01T12:00:00Z")
+        val known = stream1.copy(uid = 10, serviceId = pluginId, url = "https://example.com/known", uploadDate = published)
+        val unknown = known.copy(uid = 12, url = "https://example.com/undated", uploadDate = null, textualUploadDate = null)
+        streamDAO.insertAll(
+            listOf(
+                known,
+                known.copy(uid = 11, url = "https://example.com/older", uploadDate = published.minusDays(1)),
+                unknown,
+                unknown.copy(uid = 13, url = "https://example.com/audio", streamType = StreamType.AUDIO_STREAM),
+                unknown.copy(uid = 14, url = "https://example.com/live", streamType = StreamType.LIVE_STREAM),
+                unknown.copy(uid = 15, url = "https://example.com/upcoming", upcomingStatus = true)
+            )
+        )
+        feedDAO.insertAll(
+            listOf(
+                FeedEntity(10, 1, firstDiscoveredAt = 100),
+                FeedEntity(11, 1, firstDiscoveredAt = 200),
+                FeedEntity(12, 1, firstDiscoveredAt = 600),
+                FeedEntity(13, 1, firstDiscoveredAt = 500),
+                FeedEntity(14, 1, firstDiscoveredAt = 300),
+                FeedEntity(15, 1, firstDiscoveredAt = 400)
+            )
+        )
+
+        assertEquals(listOf(15L, 14L, 10L, 11L, 12L, 13L), feedIds(selectedServiceId = pluginId))
+        assertEquals(listOf(15L, 14L, 10L, 11L), feedIds(selectedServiceId = pluginId, limit = 4))
+        assertEquals(listOf(12L, 13L), feedIds(selectedServiceId = pluginId, limit = 4, offset = 4))
+        assertEquals(listOf(12L, 13L, 15L, 14L, 11L, 10L), feedIds(selectedServiceId = pluginId, sortByDiscovery = true))
+
+        feedDAO.insert(FeedEntity(13, 1, firstDiscoveredAt = 900))
+        assertEquals(500L, feedDAO.getMemberships(1).single { it.streamId == 13L }.firstDiscoveredAt)
+        assertEquals(listOf(12L, 13L), feedIds(selectedServiceId = pluginId, sortByDiscovery = true, limit = 2))
+        assertNull(streamDAO.getStreamDirect(12)!!.uploadDate)
+        assertNull(streamDAO.getStreamDirect(13)!!.uploadDate)
+    }
+
+    @Test
+    fun undatedPluginUploadsCannotCrowdSourceDatedItemsOutOfPublicationPages() {
+        val pluginId = ServiceList.FIRST_DYNAMIC_PLUGIN_ID + 18
+        subscriptionDAO.insert(SubscriptionEntity(uid = 1, serviceId = pluginId, url = "https://example.com/creator", name = "Creator"))
+        val known = stream1.copy(serviceId = pluginId, url = "https://example.com/known")
+        val undated = (10L..510L).map { id ->
+            known.copy(uid = id, url = "https://example.com/$id", uploadDate = null, textualUploadDate = null)
+        }
+        streamDAO.insertAll(listOf(known) + undated)
+        feedDAO.insertAll((listOf(known) + undated).map { FeedEntity(it.uid, 1, firstDiscoveredAt = it.uid) })
+
+        val first = feedIds(selectedServiceId = pluginId)
+        val next = feedIds(selectedServiceId = pluginId, limit = 500, offset = 500)
+        assertEquals(500, first.size)
+        assertEquals(listOf(1L) + (510L downTo 12L), first)
+        assertEquals(listOf(11L, 10L), next)
+        assertTrue(first.toSet().intersect(next.toSet()).isEmpty())
+        assertEquals((510L downTo 11L).toList(), feedIds(selectedServiceId = pluginId, sortByDiscovery = true))
+    }
+
+    @Test
+    fun laterSourceDateChangesPublicationOrderWithoutResettingPluginDiscovery() {
+        val pluginId = ServiceList.FIRST_DYNAMIC_PLUGIN_ID + 19
+        subscriptionDAO.insert(SubscriptionEntity(uid = 1, serviceId = pluginId, url = "https://example.com/creator", name = "Creator"))
+        val known = stream1.copy(serviceId = pluginId, url = "https://example.com/known")
+        val unknown = known.copy(uid = 2, url = "https://example.com/unknown", uploadDate = null, textualUploadDate = null)
+        streamDAO.insertAll(listOf(known, unknown))
+        feedDAO.insertAll(listOf(FeedEntity(1, 1, firstDiscoveredAt = 100), FeedEntity(2, 1, firstDiscoveredAt = 200)))
+        assertEquals(listOf(1L, 2L), feedIds(selectedServiceId = pluginId))
+
+        val sourceDate = known.uploadDate!!.plusDays(1)
+        streamDAO.upsert(unknown.copy(uid = 0, uploadDate = sourceDate, textualUploadDate = "2023-01-02", isUploadDateApproximation = false))
+        assertEquals(listOf(2L, 1L), feedIds(selectedServiceId = pluginId))
+        streamDAO.upsert(unknown.copy(uid = 0))
+        feedDAO.insert(FeedEntity(2, 1, firstDiscoveredAt = 900))
+        val restored = streamDAO.getStreamDirect(2)!!
+        assertEquals(sourceDate, restored.uploadDate)
+        assertEquals("2023-01-02", restored.textualUploadDate)
+        assertEquals(200L, feedDAO.getMemberships(1).single { it.streamId == 2L }.firstDiscoveredAt)
+        assertEquals(listOf(2L, 1L), feedIds(selectedServiceId = pluginId, sortByDiscovery = true))
+    }
+
+    @Test
+    fun undatedRetentionUsesMembershipDiscoveryAndKeepsSharedSubscriptionsAndProfilesIsolated() {
+        val pluginId = ServiceList.FIRST_DYNAMIC_PLUGIN_ID + 20
+        val profile = SubscriptionEntity.DEFAULT_PROFILE_ID
+        val otherProfile = "11111111-1111-1111-1111-111111111111"
+        val cutoff = OffsetDateTime.parse("2026-11-01T00:00:00Z")
+        fun discovered(daysBefore: Long) = cutoff.minusDays(daysBefore).toInstant().toEpochMilli()
+        subscriptionDAO.insertAll(
+            listOf(
+                SubscriptionEntity(uid = 1, serviceId = pluginId, url = "https://example.com/first", name = "First"),
+                SubscriptionEntity(uid = 2, serviceId = pluginId, url = "https://example.com/second", name = "Second"),
+                SubscriptionEntity(uid = 3, serviceId = pluginId, url = "https://example.com/private", name = "Private", profileId = otherProfile)
+            )
+        )
+        val unknown = stream1.copy(uid = 10, serviceId = pluginId, url = "https://example.com/shared", uploadDate = null, textualUploadDate = null)
+        val dated = unknown.copy(uid = 12, url = "https://example.com/dated", uploadDate = cutoff.minusDays(40), textualUploadDate = "2026-09-22")
+        streamDAO.insertAll(
+            listOf(
+                unknown,
+                unknown.copy(uid = 11, url = "https://example.com/audio", streamType = StreamType.AUDIO_STREAM),
+                dated,
+                unknown.copy(uid = 13, url = "https://example.com/live", streamType = StreamType.LIVE_STREAM),
+                unknown.copy(uid = 14, url = "https://example.com/upcoming", upcomingStatus = true),
+                unknown.copy(uid = 15, url = "https://example.com/live-audio", streamType = StreamType.AUDIO_LIVE_STREAM),
+                unknown.copy(uid = 16, url = "https://example.com/recent")
+            )
+        )
+        feedDAO.insertAll(
+            listOf(
+                FeedEntity(10, 1, firstDiscoveredAt = discovered(60)),
+                FeedEntity(11, 1, firstDiscoveredAt = discovered(40)),
+                FeedEntity(12, 1, firstDiscoveredAt = discovered(-1)),
+                FeedEntity(13, 1, firstDiscoveredAt = discovered(90)),
+                FeedEntity(14, 1, firstDiscoveredAt = discovered(90)),
+                FeedEntity(15, 1, firstDiscoveredAt = discovered(90)),
+                FeedEntity(16, 1, firstDiscoveredAt = discovered(-1)),
+                FeedEntity(10, 2, firstDiscoveredAt = discovered(60)),
+                FeedEntity(10, 3, firstDiscoveredAt = discovered(60)),
+                FeedEntity(11, 3, firstDiscoveredAt = discovered(40)),
+                FeedEntity(12, 3, firstDiscoveredAt = discovered(90))
+            )
+        )
+        fun memberships(subscription: Long) = feedDAO.getMemberships(subscription).map { it.streamId }.toSet()
+
+        feedDAO.unlinkStreamsOlderThanForProfile(profile, cutoff)
+        assertEquals(setOf(13L, 14L, 15L, 16L), memberships(1))
+        // The shared stream is the only/latest reference in this other subscription.
+        assertEquals(setOf(10L), memberships(2))
+        assertEquals(setOf(10L, 11L, 12L), memberships(3))
+
+        feedDAO.unlinkStreamsOlderThan(cutoff)
+        assertEquals(setOf(13L, 14L, 15L, 16L), memberships(1))
+        assertEquals(setOf(10L), memberships(2))
+        // Both rows tied at the latest effective timestamp remain, even when both are old.
+        assertEquals(setOf(11L, 12L), memberships(3))
+        assertEquals(discovered(60), feedDAO.getMemberships(2).single().firstDiscoveredAt)
+        assertNull(streamDAO.getStreamDirect(10)!!.uploadDate)
+        assertEquals(dated.uploadDate, streamDAO.getStreamDirect(12)!!.uploadDate)
     }
 
     @Test
@@ -638,14 +781,15 @@ class FeedDAOTest {
         sortByDiscovery: Boolean = false,
         limit: Int = 500,
         offset: Int = 0,
-        sortByViews: Boolean = false
+        sortByViews: Boolean = false,
+        selectedServiceId: Int = serviceId
     ) = feedDAO.getStreams(
         SubscriptionEntity.DEFAULT_PROFILE_ID,
         FeedGroupEntity.GROUP_ALL_ID,
         includePlayed = true,
         includePartiallyPlayed = true,
         uploadDateBefore = null,
-        serviceId = serviceId,
+        serviceId = selectedServiceId,
         youtubeModeMask = SubscriptionEntity.YOUTUBE_MODE_REGULAR,
         sortByDiscovery = sortByDiscovery,
         limit = limit,
