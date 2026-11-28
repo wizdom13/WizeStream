@@ -4,6 +4,11 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+### Settings layout
+
+- Use a compact toolbar with the settings title beside the back button, leaving more space for preferences.
+- Keep the last settings rows fully reachable above the system navigation buttons, including after restoring a scrolled page.
+
 ### Single-channel feed refresh
 
 - Add Refresh channel feed to subscribed channels' menus to fetch their saved feed immediately, including muted channels, while keeping the mute setting enabled for regular updates.
