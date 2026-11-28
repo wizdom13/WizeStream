@@ -26,11 +26,14 @@ import java.io.Serializable
 import java.lang.reflect.Field
 import java.lang.reflect.Proxy
 import java.time.Duration
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -62,6 +65,7 @@ import org.schabi.newpipe.extractor.plugin.PluginPackage
 import org.schabi.newpipe.extractor.plugin.PluginPreferences
 import org.schabi.newpipe.extractor.plugin.PluginRepository
 import org.schabi.newpipe.extractor.search.SearchInfo
+import org.schabi.newpipe.extractor.stream.ContentAvailability
 import org.schabi.newpipe.extractor.stream.DeliveryMethod
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
@@ -352,6 +356,77 @@ class PipePipePackageCompatibilityTest {
     }
 
     @Test
+    fun publishedNativeDexCanCallAllItsApi23InterfaceCompanions() {
+        val fixture = loadPublishedNative()
+        val html = assets.open("plugin-fixtures/native-search.html").bufferedReader().use { it.readText() }
+        val card = requireNotNull(Jsoup.parse(html, "https://www.pornhub.com/").selectFirst(".videoblock"))
+        val type = Class.forName(
+            "org.wizestream.plugin.pornhub.PornHubStreamItemExtractor",
+            true,
+            fixture.service.javaClass.classLoader
+        )
+        val extractor = type.getConstructor(Element::class.java).newInstance(card) as StreamInfoItemExtractor
+        // These methods are concrete D8 forwarding methods in the unmodified signed
+        // package. Call them directly, outside the host's compatibility adapters.
+        assertEquals("https://media.example.com/native-poster.jpg", extractor.thumbnailUrl)
+        assertNull(extractor.albumUrl)
+        assertNull(extractor.shortDescription)
+        assertNull(extractor.upcomingStatus)
+        assertNull(extractor.uploaderAvatarUrl)
+        assertNull(extractor.uploaderId)
+        assertEquals(ContentAvailability.UNKNOWN, extractor.contentAvailability)
+        assertFalse(extractor.isRoundPlayStream)
+        assertFalse(extractor.isShortFormContent)
+        assertFalse(extractor.isUploaderVerified)
+        assertFalse(extractor.requiresMembership())
+        assertTrue(offline.requests.isEmpty())
+    }
+
+    @Test
+    fun publishedNativePluginExtractsSearchWithSharedInterfaceDefaults() {
+        val fixture = loadPublishedNative()
+        val query = fixture.service.searchQHFactory.fromQuery("fixture query", emptyList(), emptyList())
+        val info = SearchInfo.getInfo(fixture.service, query)
+        assertTrue(info.errors.toString(), info.errors.isEmpty())
+        val item = info.relatedItems.single() as StreamInfoItem
+        assertEquals("Native fixture lesson", item.name)
+        assertEquals(NATIVE_STREAM_URL, item.url)
+        assertEquals("Fixture uploader", item.uploaderName)
+        assertEquals("https://www.pornhub.com/model/fixture-uploader", item.uploaderUrl)
+        assertEquals(125L, item.duration)
+        assertEquals(1_250L, item.viewCount)
+        assertEquals("https://media.example.com/native-poster.jpg", item.thumbnailUrl)
+        assertNotNull(item.uploadDate)
+        assertFalse(item.isShortFormContent)
+        assertFalse(item.requiresMembership())
+        assertEquals(listOf("native-search"), offline.requests)
+    }
+
+    @Test
+    fun publishedNativePluginExtractsStreamAndPreservesMediaHeaders() {
+        val fixture = loadPublishedNative()
+        val info = StreamInfo.getInfo(fixture.service, NATIVE_STREAM_URL)
+        assertTrue(info.errors.toString(), info.errors.isEmpty())
+        assertEquals("Native fixture lesson", info.name)
+        assertEquals("Fixture uploader", info.uploaderName)
+        assertEquals(125L, info.duration)
+        assertEquals(StreamType.VIDEO_STREAM, info.streamType)
+        assertEquals(fixture.service.serviceId, info.serviceId)
+        assertNotNull(info.uploadDate)
+        val video = info.videoStreams.single()
+        assertEquals(DeliveryMethod.PROGRESSIVE_HTTP, video.deliveryMethod)
+        assertEquals("https://media.example.com/native-video.mp4?token=fixture", video.content)
+        assertEquals("720p", video.resolution)
+        assertEquals(false, video.cacheable)
+        assertEquals(NATIVE_STREAM_URL, requireNotNull(video.requestHeaders)["Referer"])
+        assertEquals("https://www.pornhub.com", requireNotNull(video.requestHeaders)["Origin"])
+        val caption = info.subtitles.single()
+        assertEquals(NATIVE_STREAM_URL, requireNotNull(caption.requestHeaders)["Referer"])
+        assertEquals(false, caption.cacheable)
+        assertEquals(listOf("native-stream"), offline.requests)
+    }
+
+    @Test
     fun nativePluginUsesProfileContextAndRejectsPipePipeOnlyContext() {
         val nativePresent = assets.list("").orEmpty().contains("native-example.ppp")
         val requireNative = InstrumentationRegistry.getArguments().getString("requireNativePluginFixture") == "true"
@@ -395,6 +470,12 @@ class PipePipePackageCompatibilityTest {
         assertEquals("BHXTB1DqhMt9/MVbz63M5/YPOkEtuDPh72ueB4DqUsc=", fixture.entry.publicKey)
         return fixture
     }
+
+    private fun loadPublishedNative(): LoadedFixture = loadFixture(
+        "pornhub-6.ppp",
+        "plugin-fixtures/pornhub-6-index.json",
+        PUBLISHED_NATIVE_REPOSITORY
+    )
 
     // Class.forName literals can be rewritten to desugared types in the minified test APK.
     private fun platformClass(name: String): Class<*> = ClassLoader.getSystemClassLoader().loadClass(name)
@@ -512,6 +593,14 @@ class PipePipePackageCompatibilityTest {
 
         override fun execute(request: Request): Response {
             val url = request.url()
+            if (url == "https://www.pornhub.com/video/search?search=fixture+query&page=1") {
+                requests += "native-search"
+                return response(request, "native-search.html")
+            }
+            if (url == NATIVE_STREAM_URL) {
+                requests += "native-stream"
+                return response(request, "native-stream.html")
+            }
             if (url == "https://twitch.tv") {
                 requests += "home"
                 return Response(
@@ -549,7 +638,17 @@ class PipePipePackageCompatibilityTest {
             return Response(200, "OK", emptyMap(), bytes.toString(Charsets.UTF_8), bytes, request.url())
         }
 
-        override fun executeAsync(request: Request, callback: AsyncCallback): CancellableCall = throw AssertionError("Unexpected asynchronous request in offline plugin test")
+        override fun executeAsync(request: Request, callback: AsyncCallback): CancellableCall {
+            assertTrue("Unexpected asynchronous request: ${request.url()}", request.url().startsWith("https://www.pornhub.com/"))
+            callback.onSuccess(execute(request))
+            // Complete synchronously without constructing a network client. A timeout or
+            // cancellation would be a test failure, never a real network operation.
+            return object : CancellableCall(null) {
+                override fun cancel() = throw AssertionError("A completed fixture request was cancelled")
+
+                override fun isCancelled(): Boolean = false
+            }.apply { setFinished() }
+        }
     }
 
     /** Test-only restoration; no production reset/install-verification bypass is exposed. */
@@ -585,6 +684,8 @@ class PipePipePackageCompatibilityTest {
     companion object {
         private const val TWITCH_REPOSITORY = "https://github.com/MohrJonas/TwitchPipePipePlugin/releases/download/repo/index.json"
         private const val NATIVE_REPOSITORY = "https://example.invalid/native-fixtures/index.json"
+        private const val PUBLISHED_NATIVE_REPOSITORY = "https://github.com/wizdom13/PornHub-WizeStream-Plugin/releases/download/repo/index.json"
+        private const val NATIVE_STREAM_URL = "https://www.pornhub.com/view_video.php?viewkey=phfixture123"
         private const val SEARCH_URL = "https://twitch.tv/search?term=fixture"
         private const val STREAM_URL = "https://twitch.tv/fixture?_type=stream&_channelId=42&_pagination=eyJvZmZzZXQiOjAsInNpemUiOjIwfQ=="
         private const val HLS_URL = "https://media.example.invalid/live/720p.m3u8"

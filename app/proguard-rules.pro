@@ -134,6 +134,9 @@
 
 # External service packages link against these public APIs at runtime. Their callers
 # are absent from the app's R8 input, so retain the complete published plugin surface.
+# DesugarPluginApi materializes API-23 interface companions before R8. These rules
+# must keep those real inputs too: R8 9 no longer keeps compiler-generated $-CC
+# methods merely because the original interface is kept.
 -keep class org.schabi.newpipe.extractor.** { *; }
 -keep interface org.schabi.newpipe.extractor.** { *; }
 -keep class com.grack.nanojson.** { *; }

@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.variant.ScopedArtifacts
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaToolchainService
 
@@ -248,12 +250,18 @@ val pluginRuntimeConfiguration by configurations.creating {
     isCanBeConsumed = false
     isTransitive = false
 }
+val pluginApiCompiler by configurations.creating {
+    isCanBeConsumed = false
+    isTransitive = false
+}
 val pluginRuntimeJavaLauncher = extensions.getByType<JavaToolchainService>().launcherFor {
     languageVersion.set(JavaLanguageVersion.of(21))
 }
 dependencies {
     pluginRuntimeLibraries("com.android.tools:desugar_jdk_libs:${libs.versions.desugar.get()}")
     pluginRuntimeConfiguration("com.android.tools:desugar_jdk_libs_configuration:${libs.versions.desugar.get()}")
+    // Read the same compiler embedded in AGP without changing Gradle's plugin classpath.
+    pluginApiCompiler("com.android.tools.build:builder:${libs.versions.agp.get()}")
 }
 val generatePluginRuntime = tasks.register<GeneratePluginRuntime>("generatePluginRuntime") {
     group = "plugin development"
@@ -268,6 +276,23 @@ val generatePluginRuntime = tasks.register<GeneratePluginRuntime>("generatePlugi
 }
 androidComponents.onVariants { variant ->
     variant.sources.assets?.addGeneratedSourceDirectory(generatePluginRuntime, GeneratePluginRuntime::outputDirectory)
+    if (variant.buildType == "release" || variant.buildType == "pluginCompatibility") {
+        val preservePluginApi = tasks.register<DesugarPluginApi>(variant.computeTaskName("desugar", "PluginApi")) {
+            compileClasspath.from(variant.compileClasspath)
+            androidLibraries.from(androidComponents.sdkComponents.bootClasspath)
+            compilerJar.set(layout.file(pluginApiCompiler.elements.map { it.single().asFile }))
+            // Existing signed plugin DEX calls API-23 companions even if the host's
+            // minimum Android version eventually rises above 23.
+            minimumApi.set(23)
+        }
+        variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).use(preservePluginApi)
+            .toTransform(
+                ScopedArtifact.CLASSES,
+                DesugarPluginApi::inputJars,
+                DesugarPluginApi::inputDirectories,
+                DesugarPluginApi::outputJar
+            )
+    }
 }
 
 // A compile-only SDK for the standalone template. Providers remain in the host APK;
