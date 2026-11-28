@@ -19,7 +19,7 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <body>
 <header><h1>WizeStream changelog</h1><p>Release history, newest first.</p></header>
 <details><summary>Browse releases</summary><nav aria-label="Releases"><ul>
-<li><a href="#unreleased">Unreleased</a></li>
+<li><a href="#release-1054000">WizeStream 1.54.0 (2026-11-28)</a></li>
 <li><a href="#release-1053000">WizeStream 1.53.0 (2026-11-27)</a></li>
 <li><a href="#release-1052002">WizeStream 1.52.2 (2026-11-25)</a></li>
 <li><a href="#release-1052001">WizeStream 1.52.1 (2026-11-24)</a></li>
@@ -127,13 +127,20 @@ nav ul { columns: 2 14rem; } code { white-space: pre-wrap; }
 <li><a href="#release-101201">WizeStream 0.28.7-m1</a></li>
 </ul></nav></details>
 <main>
-<section id="unreleased">
-<h2>Unreleased</h2>
+<section id="release-1054000" data-version="1.54.0" data-version-code="1054000">
+<h2>WizeStream 1.54.0 (<time datetime="2026-11-28">2026-11-28</time>)</h2>
 <div class="release-notes">
 <h3>Settings layout</h3>
 <ul>
 <li>Use a compact toolbar with the settings title beside the back button, leaving more space for preferences.</li>
 <li>Keep the last settings rows fully reachable above the system navigation buttons, including after restoring a scrolled page.</li>
+</ul>
+<h3>HLS video downloads</h3>
+<ul>
+<li>Add manual MP4 downloads for completed HLS videos when a service has no direct video file, with the selected HLS quality shown in the download dialog.</li>
+<li>Preserve the original AVC video and optional AAC audio without re-encoding, including separate audio renditions, while retaining provider headers, signed URLs, proxy settings and pause/resume support.</li>
+<li>Keep completed download input for retry if MP4 export or the final file write fails. Export uses the cached input without additional network requests.</li>
+<li>Reject live, unfinished, encrypted/DRM, discontinuous and gapped playlists. HLS downloads do not support selected ranges, companion captions or MP3 conversion.</li>
 </ul>
 <h3>Single-channel feed refresh</h3>
 <ul>

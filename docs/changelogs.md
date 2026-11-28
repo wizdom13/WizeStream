@@ -4,10 +4,19 @@ Release history is listed newest first. The number beside each release is its An
 
 ## Unreleased
 
+## WizeStream 1.54.0 (`1054000`)
+
 ### Settings layout
 
 - Use a compact toolbar with the settings title beside the back button, leaving more space for preferences.
 - Keep the last settings rows fully reachable above the system navigation buttons, including after restoring a scrolled page.
+
+### HLS video downloads
+
+- Add manual MP4 downloads for completed HLS videos when a service has no direct video file, with the selected HLS quality shown in the download dialog.
+- Preserve the original AVC video and optional AAC audio without re-encoding, including separate audio renditions, while retaining provider headers, signed URLs, proxy settings and pause/resume support.
+- Keep completed download input for retry if MP4 export or the final file write fails. Export uses the cached input without additional network requests.
+- Reject live, unfinished, encrypted/DRM, discontinuous and gapped playlists. HLS downloads do not support selected ranges, companion captions or MP3 conversion.
 
 ### Single-channel feed refresh
 
