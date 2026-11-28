@@ -104,14 +104,13 @@ internal class PlayerErrorController(
         liveUrlRecoveryHealth.reset()
         liveReadySince = null
         cancelPendingLiveStallRecovery()
+        Log.e(Player.TAG, "ExoPlayer - onPlayerError() called with:", error)
         if (player.playQueue?.item?.let { it.isRadio || it.isLiveTv } == true) {
             val message = if (player.playQueue?.item?.isLiveTv == true) R.string.tv_playback_failed else R.string.radio_playback_failed
             Toast.makeText(player.context, message, Toast.LENGTH_LONG).show()
             player.onPlaybackShutdown()
             return
         }
-        Log.e(Player.TAG, "ExoPlayer - onPlayerError() called with:", error)
-
         if (player.videoAdjustments.recover(error)) return
 
         player.saveStreamProgressState()

@@ -813,6 +813,7 @@ public final class NavigationHelper {
 
         final Intent intent = getStreamIntent(context, serviceId, url, title)
                 .putExtra(VideoDetailFragment.KEY_SWITCHING_PLAYERS, switchingPlayers);
+        DirectMediaNavigation.saveToIntent(intent, playQueue);
 
         if (playQueue != null) {
             final String cacheKey = SerializedCache.getInstance().put(playQueue, PlayQueue.class);
