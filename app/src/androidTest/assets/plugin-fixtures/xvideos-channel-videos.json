@@ -1,0 +1,23 @@
+{
+  "nb_videos": 2,
+  "nb_per_page": 36,
+  "current_page": 0,
+  "videos": [
+    {
+      "eid": "feedfixture1",
+      "u": "/video.feedfixture1/first_fixture",
+      "tf": "First undated fixture",
+      "d": "2:05",
+      "p": "feed-fixture",
+      "pn": "XVideos feed fixture"
+    },
+    {
+      "eid": "feedfixture2",
+      "u": "/video.feedfixture2/second_fixture",
+      "tf": "Second undated fixture",
+      "d": "1:20",
+      "p": "feed-fixture",
+      "pn": "XVideos feed fixture"
+    }
+  ]
+}

@@ -39,15 +39,20 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.schabi.newpipe.database.feed.model.FeedGroupEntity
+import org.schabi.newpipe.database.subscription.SubscriptionEntity
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.StreamingService
+import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
 import org.schabi.newpipe.extractor.channel.ChannelInfoItemExtractor
 import org.schabi.newpipe.extractor.channel.ChannelInfoItemsCollector
+import org.schabi.newpipe.extractor.channel.ChannelTabInfo
 import org.schabi.newpipe.extractor.downloader.CancellableCall
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
@@ -72,7 +77,10 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamInfoItemExtractor
 import org.schabi.newpipe.extractor.stream.StreamInfoItemsCollector
 import org.schabi.newpipe.extractor.stream.StreamType
+import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.local.feed.FeedScope
 import org.schabi.newpipe.profiles.ProfileManager
+import org.schabi.newpipe.testUtil.TestDatabase
 import org.schabi.newpipe.util.PluginObjectInputStream
 import org.schabi.newpipe.util.PluginStateClassLoader
 import org.schabi.newpipe.util.SerializedCache
@@ -85,6 +93,9 @@ import org.schabi.newpipe.util.SerializedCache
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 24)
 class PipePipePackageCompatibilityTest {
+    @get:Rule
+    val databaseRule = TestDatabase()
+
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context: Context get() = instrumentation.targetContext
     private val assets get() = instrumentation.context.assets
@@ -427,6 +438,100 @@ class PipePipePackageCompatibilityTest {
     }
 
     @Test
+    fun publishedPornHubUndatedChannelUploadsAppearInWhatsNew() {
+        assertUndatedChannelUploadsReachFeed(
+            loadPublishedNative(),
+            NATIVE_CHANNEL_URL,
+            listOf(
+                "https://www.pornhub.com/view_video.php?viewkey=phfeedfixture1",
+                "https://www.pornhub.com/view_video.php?viewkey=phfeedfixture2"
+            ),
+            listOf("native-channel", "native-channel-videos")
+        )
+    }
+
+    @Test
+    fun publishedXVideosUndatedChannelUploadsAppearInWhatsNew() {
+        val fixture = loadFixture(
+            "xvideos-2.ppp",
+            "plugin-fixtures/xvideos-2-index.json",
+            XVIDEOS_REPOSITORY
+        )
+        assertEquals(2, fixture.manifest.versionCode)
+        assertEquals("1.0.1", fixture.manifest.versionName)
+        assertUndatedChannelUploadsReachFeed(
+            fixture,
+            XVIDEOS_CHANNEL_URL,
+            listOf(
+                "https://www.xvideos.com/video.feedfixture1/first_fixture",
+                "https://www.xvideos.com/video.feedfixture2/second_fixture"
+            ),
+            listOf("xvideos-channel", "xvideos-channel-videos")
+        )
+    }
+
+    private fun assertUndatedChannelUploadsReachFeed(
+        fixture: LoadedFixture,
+        channelUrl: String,
+        expectedUrls: List<String>,
+        expectedRequests: List<String>
+    ) {
+        assertTrue(fixture.service.javaClass.classLoader is DexClassLoader)
+        val channel = ChannelInfo.getInfo(fixture.service, channelUrl)
+        assertTrue(channel.errors.toString(), channel.errors.isEmpty())
+        val tab = ChannelTabInfo.getInfo(fixture.service, channel.tabs.single())
+        assertTrue(tab.errors.toString(), tab.errors.isEmpty())
+        val uploads = tab.relatedItems.map { it as StreamInfoItem }
+        assertEquals(expectedUrls, uploads.map { it.url })
+        assertTrue(uploads.all { it.serviceId == fixture.service.serviceId })
+        assertTrue(uploads.all { it.streamType == StreamType.VIDEO_STREAM && it.uploadDate == null })
+
+        val profileId = ProfileManager.getActiveProfileId(context)
+        val database = databaseRule.database
+        val subscriptionId = database.subscriptionDAO().insert(
+            SubscriptionEntity.from(channel).apply { this.profileId = profileId }
+        )
+        val manager = FeedDatabaseManager(context, profileId)
+        assertSame(database, manager.database())
+        manager.upsertAll(subscriptionId, uploads, uploaderAvatarUrl = channel.avatarUrl)
+        val firstMemberships = database.feedDAO().getMemberships(subscriptionId)
+            .associate { it.streamId to it.firstDiscoveredAt }
+        assertEquals(expectedUrls.size, firstMemberships.size)
+        assertTrue(firstMemberships.values.all { it > 0 })
+
+        fun feed(serviceId: Int) = requireNotNull(
+            manager.getStreams(
+                FeedGroupEntity.GROUP_ALL_ID,
+                includePlayedStreams = true,
+                includePartiallyPlayedStreams = true,
+                includeFutureStreams = false,
+                scope = FeedScope(serviceId, SubscriptionEntity.YOUTUBE_MODE_REGULAR)
+            ).blockingGet()
+        ).map { it.stream }
+
+        for (scope in listOf(fixture.service.serviceId, FeedScope.ALL_SERVICES)) {
+            val restored = feed(scope)
+            assertEquals(expectedUrls.toSet(), restored.map { it.url }.toSet())
+            assertTrue(restored.all { it.serviceId == fixture.service.serviceId })
+            assertTrue("Discovery must not invent a publication date", restored.all { it.uploadDate == null })
+            assertTrue(restored.all { it.uploaderUrl == channel.url })
+        }
+        assertTrue(feed(ServiceList.YouTube.serviceId).isEmpty())
+
+        // Refresh and normal retention processing must neither duplicate these rows nor
+        // replace their original discovery timestamps with a fresh publication date.
+        manager.upsertAll(subscriptionId, uploads, uploaderAvatarUrl = channel.avatarUrl)
+        manager.removeOrphansOrOlderStreams()
+        assertEquals(
+            firstMemberships,
+            database.feedDAO().getMemberships(subscriptionId).associate { it.streamId to it.firstDiscoveredAt }
+        )
+        assertEquals(expectedUrls.toSet(), feed(fixture.service.serviceId).map { it.url }.toSet())
+        assertTrue(uploads.all { it.uploadDate == null })
+        assertEquals(expectedRequests, offline.requests)
+    }
+
+    @Test
     fun nativePluginUsesProfileContextAndRejectsPipePipeOnlyContext() {
         val nativePresent = assets.list("").orEmpty().contains("native-example.ppp")
         val requireNative = InstrumentationRegistry.getArguments().getString("requireNativePluginFixture") == "true"
@@ -593,6 +698,27 @@ class PipePipePackageCompatibilityTest {
 
         override fun execute(request: Request): Response {
             val url = request.url()
+            when (url) {
+                NATIVE_CHANNEL_URL -> {
+                    requests += "native-channel"
+                    return response(request, "native-channel.html")
+                }
+
+                "$NATIVE_CHANNEL_URL/videos" -> {
+                    requests += "native-channel-videos"
+                    return response(request, "native-channel-videos.html")
+                }
+
+                XVIDEOS_CHANNEL_URL -> {
+                    requests += "xvideos-channel"
+                    return response(request, "xvideos-channel.html")
+                }
+
+                "$XVIDEOS_CHANNEL_URL/videos/new/0" -> {
+                    requests += "xvideos-channel-videos"
+                    return response(request, "xvideos-channel-videos.json")
+                }
+            }
             if (url == "https://www.pornhub.com/video/search?search=fixture+query&page=1") {
                 requests += "native-search"
                 return response(request, "native-search.html")
@@ -639,7 +765,11 @@ class PipePipePackageCompatibilityTest {
         }
 
         override fun executeAsync(request: Request, callback: AsyncCallback): CancellableCall {
-            assertTrue("Unexpected asynchronous request: ${request.url()}", request.url().startsWith("https://www.pornhub.com/"))
+            assertTrue(
+                "Unexpected asynchronous request: ${request.url()}",
+                request.url().startsWith("https://www.pornhub.com/") ||
+                    request.url().startsWith("https://www.xvideos.com/")
+            )
             callback.onSuccess(execute(request))
             // Complete synchronously without constructing a network client. A timeout or
             // cancellation would be a test failure, never a real network operation.
@@ -686,6 +816,9 @@ class PipePipePackageCompatibilityTest {
         private const val NATIVE_REPOSITORY = "https://example.invalid/native-fixtures/index.json"
         private const val PUBLISHED_NATIVE_REPOSITORY = "https://github.com/wizdom13/PornHub-WizeStream-Plugin/releases/download/repo/index.json"
         private const val NATIVE_STREAM_URL = "https://www.pornhub.com/view_video.php?viewkey=phfixture123"
+        private const val NATIVE_CHANNEL_URL = "https://www.pornhub.com/model/feed-fixture"
+        private const val XVIDEOS_REPOSITORY = "https://github.com/wizdom13/XVideos-WizeStream-Plugin/releases/download/repo/index.json"
+        private const val XVIDEOS_CHANNEL_URL = "https://www.xvideos.com/profiles/feed-fixture"
         private const val SEARCH_URL = "https://twitch.tv/search?term=fixture"
         private const val STREAM_URL = "https://twitch.tv/fixture?_type=stream&_channelId=42&_pagination=eyJvZmZzZXQiOjAsInNpemUiOjIwfQ=="
         private const val HLS_URL = "https://media.example.invalid/live/720p.m3u8"

@@ -36,7 +36,7 @@ class FeedDatabaseManager @JvmOverloads constructor(
 
     companion object {
         /**
-         * Only items that are newer than this will be saved.
+         * Source-dated items must be newer than this; undated uploads age by discovery time.
          */
         val FEED_OLDEST_ALLOWED_DATE: OffsetDateTime
             get() = FeedRetentionPolicy.cutoff(LocalDate.now(ZoneOffset.UTC), false)
@@ -216,8 +216,17 @@ class FeedDatabaseManager @JvmOverloads constructor(
             val uploadDate = stream.uploadDate
 
             when {
-                uploadDate == null && (stream.streamType == StreamType.LIVE_STREAM || stream.upcomingStatus == true) -> stream
+                uploadDate == null && (
+                    stream.streamType in setOf(
+                        StreamType.VIDEO_STREAM,
+                        StreamType.AUDIO_STREAM,
+                        StreamType.LIVE_STREAM,
+                        StreamType.AUDIO_LIVE_STREAM
+                    ) || stream.upcomingStatus == true
+                    ) -> stream
+
                 uploadDate != null && uploadDate.offsetDateTime() >= oldestAllowedDate -> stream
+
                 else -> null
             }
         }
@@ -241,9 +250,20 @@ class FeedDatabaseManager @JvmOverloads constructor(
                 }
             }
             val streamIds = streamTable.upsertAll(streamEntities)
-            val feedEntities = streamIds.flatMap { streamId ->
+            val feedEntities = streamIds.flatMapIndexed { index, streamId ->
+                val item = itemsToInsert[index]
+                // Preserve provider order for undated uploads discovered in the same refresh.
+                // This is membership metadata, never a fabricated publication date.
+                val firstDiscoveredAt = firstSeen[streamId] ?: if (
+                    item.uploadDate == null && item.upcomingStatus != true &&
+                    item.streamType in setOf(StreamType.VIDEO_STREAM, StreamType.AUDIO_STREAM)
+                ) {
+                    discoveredAt - index
+                } else {
+                    discoveredAt
+                }
                 modeMasks.map { modeMask ->
-                    FeedEntity(streamId, subscriptionId, modeMask, firstSeen[streamId] ?: discoveredAt)
+                    FeedEntity(streamId, subscriptionId, modeMask, firstDiscoveredAt)
                 }
             }
 

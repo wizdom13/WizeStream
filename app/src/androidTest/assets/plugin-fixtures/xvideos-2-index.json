@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "name": "XVideos for WizeStream",
+  "plugins": [
+    {
+      "pluginId": "org.wizestream.plugin.xvideos",
+      "name": "XVideos",
+      "versionCode": 2,
+      "versionName": "1.0.1",
+      "host": "wizestream",
+      "apiVersion": "2.0",
+      "author": "WizeStream",
+      "description": "Native WizeStream service for public XVideos videos. Adults only.",
+      "minHostVersionCode": 1054000,
+      "minAndroidSdk": 24,
+      "requiredCapabilities": [],
+      "package": "xvideos-wizestream-2.ppp",
+      "sha256": "c3678c64116a165b50f930775287e69427da4dd880edf05754f9cc932d22e9eb",
+      "signature": "aJa9SfFLhHpE4fMs6yxWwxGGlleMJvWCdC1VwKOTzMC86vIJ1PjXGoLlwr6NQF0AtqfYXlZrAdJgBh+4vXVDDA==",
+      "publicKey": "4Ia1X8lg7g00mY5dSolww/w/m2nauPM3MtX1I1r0SO8=",
+      "nsfw": true
+    }
+  ]
+}

@@ -51,3 +51,21 @@ synthetic non-explicit metadata and uses reserved example.com media URLs. The
 provider deliberately rejects .invalid hostnames, so those are not valid fixtures.
 All extraction requests are answered offline; the test never fetches or renders
 provider content. Package signatures are verified without rewriting the bytes.
+
+Native WizeStream API 2.0 undated subscription-feed fixture
+
+Plugin: XVideos 1.0.1, version code 2, by WizeStream
+Package source:
+https://github.com/wizdom13/XVideos-WizeStream-Plugin/releases/download/repo/xvideos-wizestream-2.ppp
+Package SHA-256:
+c3678c64116a165b50f930775287e69427da4dd880edf05754f9cc932d22e9eb
+Package size: 164016 bytes
+Source revision:
+https://github.com/wizdom13/XVideos-WizeStream-Plugin/tree/6e43c2855fc0ab80122fcaa8ab3669c8c421288d
+License: GPL-3.0-or-later; the preparation script includes the source LICENSE.
+The catalog signature/key were recorded from the publisher's repo/index.json.
+
+The PornHub and XVideos feed fixtures contain neutral channel listings without
+publication dates. Tests load the original signed packages, extract their real
+channel tabs, and persist the results through the host's feed database. Both
+remain test-only generated assets; no provider page or media is requested.

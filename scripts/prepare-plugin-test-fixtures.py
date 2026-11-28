@@ -44,6 +44,20 @@ FIXTURES = (
         35149,
         "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
     ),
+    (
+        "xvideos-2.ppp",
+        "https://github.com/wizdom13/XVideos-WizeStream-Plugin/releases/download/repo/"
+        "xvideos-wizestream-2.ppp",
+        164016,
+        "c3678c64116a165b50f930775287e69427da4dd880edf05754f9cc932d22e9eb",
+    ),
+    (
+        "xvideos-2-LICENSE.txt",
+        "https://raw.githubusercontent.com/wizdom13/XVideos-WizeStream-Plugin/"
+        "6e43c2855fc0ab80122fcaa8ab3669c8c421288d/LICENSE",
+        35149,
+        "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    ),
 )
 
 
