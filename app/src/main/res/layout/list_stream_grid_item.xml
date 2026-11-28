@@ -94,7 +94,6 @@
         android:id="@+id/itemUploaderRoot"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="?attr/selectableItemBackgroundBorderless"
         android:clickable="false"
         android:focusable="false"
         android:minHeight="@dimen/stream_item_uploader_touch_target"
@@ -102,41 +101,61 @@
         app:layout_constraintEnd_toEndOf="@+id/itemThumbnailContainer"
         app:layout_constraintStart_toStartOf="@+id/itemThumbnailContainer"
         app:layout_constraintTop_toBottomOf="@+id/itemVideoTitleView"
-        tools:contentDescription="Open channel Uploader">
+        android:importantForAccessibility="no">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/itemUploaderAvatarView"
-            android:layout_width="@dimen/related_channel_avatar_size"
-            android:layout_height="@dimen/related_channel_avatar_size"
-            android:contentDescription="@null"
-            android:importantForAccessibility="no"
-            android:scaleType="centerCrop"
-            android:src="@drawable/placeholder_person"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:shapeAppearance="@style/CircularImageView" />
+        <!-- Only this bounded avatar/name area opens the channel. -->
 
-        <org.schabi.newpipe.views.MediaTextView
-            android:id="@+id/itemUploaderView"
-            app:layout_constrainedWidth="true"
-            app:mediaTextRole="channelName"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/itemUploaderLink"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/margin_small"
-            android:ellipsize="end"
-            android:lines="1"
-            android:textAlignment="viewStart"
-            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="@dimen/video_item_search_uploader_text_size"
-            app:layout_constraintBottom_toTopOf="@+id/itemAdditionalDetails"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="false"
+            android:focusable="false"
+            android:minWidth="@dimen/stream_item_uploader_touch_target"
+            android:minHeight="@dimen/stream_item_uploader_touch_target"
+            android:paddingEnd="@dimen/margin_small"
+            app:layout_constrainedWidth="true"
             app:layout_constraintHorizontal_bias="0"
-            app:layout_constraintStart_toEndOf="@+id/itemUploaderAvatarView"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_chainStyle="packed"
-            tools:text="Uploader name long very very long long" />
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/itemUploaderAvatarView"
+                android:layout_width="@dimen/related_channel_avatar_size"
+                android:layout_height="@dimen/related_channel_avatar_size"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop"
+                android:src="@drawable/placeholder_person"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:shapeAppearance="@style/CircularImageView" />
+
+            <org.schabi.newpipe.views.MediaTextView
+                android:id="@+id/itemUploaderView"
+                app:layout_constrainedWidth="true"
+                app:mediaTextRole="channelName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/margin_small"
+                android:ellipsize="end"
+                android:lines="1"
+                android:textAlignment="viewStart"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="@dimen/video_item_search_uploader_text_size"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0"
+                app:layout_constraintStart_toEndOf="@+id/itemUploaderAvatarView"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="Uploader name long very very long long"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_goneMarginStart="0dp" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <org.schabi.newpipe.views.MediaTextView
             android:id="@+id/itemAdditionalDetails"
@@ -150,10 +169,11 @@
             android:textSize="@dimen/video_item_search_upload_date_text_size"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/itemUploaderView"
-            app:layout_constraintTop_toBottomOf="@+id/itemUploaderView"
+            app:layout_constraintStart_toStartOf="@id/itemUploaderLink"
+            app:layout_constraintTop_toBottomOf="@id/itemUploaderLink"
             app:mediaTextRole="videoMetadata"
-            tools:text="2 years ago • 10M views" />
+            tools:text="2 years ago • 10M views"
+            android:layout_marginStart="0dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

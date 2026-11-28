@@ -17,13 +17,18 @@ class TestDatabase : TestRule {
 
     override fun apply(base: Statement, description: Description): Statement = object : Statement() {
         override fun evaluate() {
-            val previousDatabase = databaseField.get(null)
+            var previousDatabase: Any? = null
             try {
-                database = createReplacingNewPipeDatabase()
+                synchronized(NewPipeDatabase::class.java) {
+                    previousDatabase = databaseField.get(null)
+                    database = createReplacingNewPipeDatabase()
+                }
                 base.evaluate()
             } finally {
                 // Detach the fixture before closing it so later tests never inherit its closed DB.
-                databaseField.set(null, previousDatabase)
+                synchronized(NewPipeDatabase::class.java) {
+                    databaseField.set(null, previousDatabase)
+                }
                 if (::database.isInitialized) database.close()
             }
         }
@@ -49,13 +54,16 @@ class TestDatabase : TestRule {
                 }
                 .build()
 
-            databaseField.set(null, database)
-
-            assertSame(
-                "Mocking database failed!",
-                database,
-                NewPipeDatabase.getInstance(ApplicationProvider.getApplicationContext())
-            )
+            // Serialize with lazy initialization so an in-flight background open cannot
+            // overwrite the fixture after its identity has been checked.
+            synchronized(NewPipeDatabase::class.java) {
+                databaseField.set(null, database)
+                assertSame(
+                    "Mocking database failed!",
+                    database,
+                    NewPipeDatabase.getInstance(ApplicationProvider.getApplicationContext())
+                )
+            }
 
             return database
         }

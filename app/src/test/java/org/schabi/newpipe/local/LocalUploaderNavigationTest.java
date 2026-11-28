@@ -31,8 +31,6 @@ public class LocalUploaderNavigationTest {
                 "org/schabi/newpipe/local/history/StatisticsPlaylistFragment.java");
         final String playlist = read(
                 "org/schabi/newpipe/local/playlist/LocalPlaylistFragment.java");
-        final String historyHolder = read(
-                "org/schabi/newpipe/local/holder/LocalStatisticStreamItemHolder.java");
         final String playlistHolder = read(
                 "org/schabi/newpipe/local/holder/LocalPlaylistStreamItemHolder.java");
         final String baseHolder = read(
@@ -42,7 +40,6 @@ public class LocalUploaderNavigationTest {
         assertTrue(history.contains("unsetUploaderSelectedListener"));
         assertTrue(playlist.contains("setUploaderSelectedListener"));
         assertTrue(playlist.contains("unsetUploaderSelectedListener"));
-        assertTrue(historyHolder.contains("bindUploaderNavigation"));
         assertTrue(playlistHolder.contains("bindUploaderNavigation"));
         assertTrue(baseHolder.contains("uploaderRoot.setOnClickListener(null)"));
         assertTrue(baseHolder.contains("uploaderRoot.setClickable(false)"));

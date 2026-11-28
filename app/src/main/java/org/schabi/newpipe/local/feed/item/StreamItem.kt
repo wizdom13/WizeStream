@@ -25,6 +25,7 @@ import org.schabi.newpipe.extractor.stream.StreamType.LIVE_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.POST_LIVE_AUDIO_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.POST_LIVE_STREAM
 import org.schabi.newpipe.extractor.stream.StreamType.VIDEO_STREAM
+import org.schabi.newpipe.info_list.StreamUploaderBinding
 import org.schabi.newpipe.info_list.StreamUploaderNavigation
 import org.schabi.newpipe.learning.VideoNoteBadges
 import org.schabi.newpipe.local.feed.FeedItemVisualState
@@ -37,6 +38,7 @@ import org.schabi.newpipe.util.ShortsThumbnailPolicy
 import org.schabi.newpipe.util.StreamTypeUtil
 import org.schabi.newpipe.util.ThemeHelper.resolveDrawable
 import org.schabi.newpipe.util.image.CoilHelper
+import org.schabi.newpipe.util.image.ImageStrategy
 
 data class StreamItem(
     val streamWithState: StreamWithState,
@@ -176,29 +178,19 @@ data class StreamItem(
     }
 
     private fun bindUploader(viewBinding: ListStreamItemBinding) {
-        CoilHelper.loadAvatar(viewBinding.itemUploaderAvatarView, stream.uploaderAvatarUrl)
-
         val channel = StreamUploaderNavigation.create(
             stream.serviceId,
             stream.uploaderUrl,
             stream.uploader,
             stream.uploaderAvatarUrl
         )
-        val listener = onUploaderSelected
-        viewBinding.itemUploaderRoot.apply {
-            if (channel != null && listener != null) {
-                isClickable = true
-                isFocusable = true
-                contentDescription = context.getString(R.string.open_channel, stream.uploader)
-                setOnClickListener { listener(channel) }
-            } else {
-                // Clear every interactive property because Groupie reuses item views.
-                setOnClickListener(null)
-                isClickable = false
-                isFocusable = false
-                contentDescription = null
-            }
-        }
+        StreamUploaderBinding.bind(
+            viewBinding.root,
+            channel,
+            stream.uploader,
+            ImageStrategy.dbUrlToImageList(stream.uploaderAvatarUrl),
+            onUploaderSelected
+        )
     }
 
     private fun updateDurationMarginForProgress(viewBinding: ListStreamItemBinding) {

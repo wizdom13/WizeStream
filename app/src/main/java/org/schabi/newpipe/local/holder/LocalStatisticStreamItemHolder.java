@@ -11,9 +11,9 @@ import androidx.core.content.ContextCompat;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.database.LocalItem;
 import org.schabi.newpipe.database.stream.StreamStatisticsEntry;
+import org.schabi.newpipe.info_list.StreamUploaderBinding;
 import org.schabi.newpipe.ktx.ViewUtils;
 import org.schabi.newpipe.local.LocalItemBuilder;
-import org.schabi.newpipe.local.LocalUploaderNavigation;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.DependentPreferenceHelper;
 import org.schabi.newpipe.util.Localization;
@@ -48,8 +48,6 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
     public final ImageView itemThumbnailView;
     public final TextView itemVideoTitleView;
     public final TextView itemUploaderView;
-    private final View itemUploaderRoot;
-    private final ImageView itemUploaderAvatarView;
     public final TextView itemDurationView;
     @Nullable
     public final TextView itemAdditionalDetails;
@@ -68,8 +66,6 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
         itemThumbnailView = itemView.findViewById(R.id.itemThumbnailView);
         itemVideoTitleView = itemView.findViewById(R.id.itemVideoTitleView);
         itemUploaderView = itemView.findViewById(R.id.itemUploaderView);
-        itemUploaderRoot = itemView.findViewById(R.id.itemUploaderRoot);
-        itemUploaderAvatarView = itemView.findViewById(R.id.itemUploaderAvatarView);
         itemDurationView = itemView.findViewById(R.id.itemDurationView);
         itemAdditionalDetails = itemView.findViewById(R.id.itemAdditionalDetails);
         itemProgressView = itemView.findViewById(R.id.itemProgressView);
@@ -106,11 +102,7 @@ public class LocalStatisticStreamItemHolder extends LocalItemHolder {
 
         itemVideoTitleView.setText(item.getStreamEntity().getTitle());
         itemUploaderView.setText(item.getStreamEntity().getUploader());
-        CoilHelper.INSTANCE.loadAvatar(itemUploaderAvatarView,
-                item.getStreamEntity().getUploaderAvatarUrl());
-        bindUploaderNavigation(itemUploaderRoot, item,
-                LocalUploaderNavigation.canOpenChannel(item.getStreamEntity()),
-                item.getStreamEntity().getUploader());
+        StreamUploaderBinding.bind(itemView, item, itemBuilder);
 
         if (item.getStreamEntity().getDuration() > 0) {
             itemDurationView.
